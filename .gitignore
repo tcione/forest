@@ -1,0 +1,5 @@
+/target
+.direnv
+.claude/settings.local.json
+todo.txt
+result
