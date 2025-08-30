@@ -1,5 +1,13 @@
 use clap::{Parser, Subcommand};
 
+mod commands {
+    pub mod plant;
+    pub mod grow;
+    pub mod check;
+    pub mod nurture;
+    pub mod trim;
+}
+
 #[derive(Debug, Parser)]
 #[command(name = "forest")]
 #[command(about = "Convention-over-configuration CLI tool to manager git worktrees", long_about = None)]
@@ -64,20 +72,10 @@ fn main() {
     let args = Cli::parse();
 
     match args.command {
-        Commands::Plant { repository_address } => {
-            println!("[NOT IMPLEMENTED] Plant");
-        }
-        Commands::Grow { root, new_branch_name } => {
-            println!("[NOT IMPLEMENTED] Grow");
-        }
-        Commands::Check { root } => {
-            println!("[NOT IMPLEMENTED] Check");
-        }
-        Commands::Nurture { root, cmd, tree } => {
-            println!("[NOT IMPLEMENTED] Nurture");
-        }
-        Commands::Trim { root } => {
-            println!("[NOT IMPLEMENTED] Trim");
-        }
+        Commands::Plant { repository_address } => commands::plant::run(repository_address),
+        Commands::Grow { root, new_branch_name } => commands::grow::run(root, new_branch_name),
+        Commands::Check { root } => commands::check::run(root),
+        Commands::Nurture { root, cmd, tree } => commands::nurture::run(root, cmd, tree),
+        Commands::Trim { root } => commands::trim::run(root),
     }
 }
