@@ -17,7 +17,7 @@ A CLI tool to facilitate git worktrees usage.
 ## Configuration
 ```config.toml
 [general]
-root_dir = "~/Projects"
+base_dir = "~/Projects"
 copy = ["./.envrc", ".env"]
 exec = []
 

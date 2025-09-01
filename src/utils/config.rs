@@ -12,7 +12,7 @@ pub struct Config {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct GeneralConfig {
-    pub root_dir: String,
+    pub base_dir: String,
     pub copy: Vec<String>,
     pub exec: Vec<String>,
 }
@@ -40,7 +40,7 @@ pub fn load_config(config_dir: PathBuf) -> Result<Config, Box<dyn std::error::Er
     let home_dir_string = home_dir()?.to_string_lossy().to_string();
     let default_config = Config {
         general: GeneralConfig {
-            root_dir: format!("{}/Projects", home_dir_string),
+            base_dir: format!("{}/Projects", home_dir_string),
             copy: default_copy(),
             exec: vec![],
         },
@@ -72,7 +72,7 @@ mod tests {
 
         // Default values
         let home_dir_string = home_dir().unwrap().to_string_lossy().to_string();
-        assert_eq!(config.general.root_dir, format!("{}/Projects", home_dir_string));
+        assert_eq!(config.general.base_dir, format!("{}/Projects", home_dir_string));
         assert_eq!(config.general.copy, vec![".env".to_string(), ".envrc".to_string()]);
         assert!(config.general.exec.is_empty());
 
@@ -91,7 +91,7 @@ mod tests {
         let config_file = temp_dir.join("config.toml");
         let custom_config_content = r#"
 [general]
-root_dir = "/home/Custom"
+base_dir = "/home/Custom"
 copy = [".env.custom"]
 exec = ["exec custom"]
 
@@ -110,7 +110,7 @@ exec = ["exec repo2"]
 
         let config = result.unwrap();
 
-        assert_eq!(config.general.root_dir, "/home/Custom");
+        assert_eq!(config.general.base_dir, "/home/Custom");
         assert_eq!(config.general.copy, vec![".env.custom"]);
         assert_eq!(config.general.exec, vec!["exec custom"]);
         assert_eq!(config.roots["repo1"].copy, vec![".env.repo1"]);
