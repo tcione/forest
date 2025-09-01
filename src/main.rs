@@ -8,6 +8,11 @@ mod commands {
     pub mod trim;
 }
 
+mod utils {
+    pub mod config;
+    pub mod path;
+}
+
 #[derive(Debug, Parser)]
 #[command(name = "forest")]
 #[command(about = "Convention-over-configuration CLI tool to manager git worktrees", long_about = None)]
