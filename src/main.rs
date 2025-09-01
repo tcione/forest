@@ -1,11 +1,11 @@
 use clap::{Parser, Subcommand};
 
 mod commands {
-    pub mod plant;
-    pub mod grow;
-    pub mod check;
-    pub mod nurture;
-    pub mod trim;
+    pub mod clone;
+    pub mod create;
+    pub mod list;
+    pub mod goto;
+    pub mod clean;
 }
 
 mod utils {
@@ -24,16 +24,16 @@ struct Cli {
 #[derive(Debug, Subcommand)]
 enum Commands {
     /// Clones git repository inside roots/
-    #[command(visible_alias = "clone", arg_required_else_help = true)]
-    Plant {
+    #[command(arg_required_else_help = true)]
+    Clone {
         /// The git repository you want to clone. Use the the same address you'd
         /// use for "git clone"
         repository_address: String,
     },
 
     /// Creates a worktree for the repo inside trees/
-    #[command(visible_alias = "create", arg_required_else_help = true)]
-    Grow {
+    #[command(arg_required_else_help = true)]
+    Create {
         /// The repository name (same as the name of the folder in your system)
         root: String,
         /// Name for your new branch. Follow normal git conventions
@@ -41,16 +41,16 @@ enum Commands {
     },
 
     /// List all worktrees under our forest service (TM)
-    #[command(visible_alias = "list", arg_required_else_help = true)]
-    Check {
+    #[command(arg_required_else_help = true)]
+    List {
         /// Filters list by root (repository name)
         #[arg(long)]
         root: Option<String>,
     },
 
     /// Easy access for a particular tree
-    #[command(visible_alias = "goto", arg_required_else_help = true)]
-    Nurture {
+    #[command(arg_required_else_help = true)]
+    Goto {
         /// Filters options by root when no tree is given
         #[arg(long)]
         root: Option<String>,
@@ -65,8 +65,8 @@ enum Commands {
     },
 
     /// Much necessary clean-up utility
-    #[command(visible_alias = "clean", arg_required_else_help = true)]
-    Trim {
+    #[command(arg_required_else_help = true)]
+    Clean {
         /// Filters options by root when no tree is given
         #[arg(long)]
         root: Option<String>,
@@ -77,10 +77,10 @@ fn main() {
     let args = Cli::parse();
 
     match args.command {
-        Commands::Plant { repository_address } => commands::plant::run(repository_address),
-        Commands::Grow { root, new_branch_name } => commands::grow::run(root, new_branch_name),
-        Commands::Check { root } => commands::check::run(root),
-        Commands::Nurture { root, cmd, tree } => commands::nurture::run(root, cmd, tree),
-        Commands::Trim { root } => commands::trim::run(root),
+        Commands::Clone { repository_address } => commands::clone::run(repository_address),
+        Commands::Create { root, new_branch_name } => commands::create::run(root, new_branch_name),
+        Commands::List { root } => commands::list::run(root),
+        Commands::Goto { root, cmd, tree } => commands::goto::run(root, cmd, tree),
+        Commands::Clean { root } => commands::clean::run(root),
     }
 }
