@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 
 mod commands {
     pub mod clone;
@@ -69,11 +70,45 @@ enum Commands {
     },
 }
 
+struct Application {
+    roots_dir: PathBuf,
+    trees_dir: PathBuf,
+}
+
+impl Application {
+    fn new() -> Self {
+        let config_dir = utils::path::config_dir().unwrap();
+        let config = utils::config::load_config(config_dir).unwrap();
+
+        Self {
+            roots_dir: PathBuf::from(&config.general.base_dir).join("roots"),
+            trees_dir: PathBuf::from(&config.general.base_dir).join("trees"),
+        }
+    }
+
+    fn setup(&self) {
+        std::fs::create_dir_all(&self.roots_dir).unwrap();
+        std::fs::create_dir_all(&self.trees_dir).unwrap();
+    }
+
+    fn clone(&self, repository_address: String) {
+        let rs = commands::clone::run(&self.roots_dir, repository_address);
+
+        if let Err(err) = rs {
+            eprintln!("{}", err);
+            std::process::exit(1);
+        }
+    }
+}
+
 fn main() {
     let args = Cli::parse();
+    let forest = Application::new();
+
+    forest.setup();
 
     match args.command {
-        Commands::Clone { repository_address } => commands::clone::run(repository_address),
+        Commands::Clone { repository_address } => forest.clone(repository_address),
         Commands::Create { root, new_branch_name } => {},
         Commands::List { root } => {},
         Commands::Goto { root, cmd, tree } => {},
