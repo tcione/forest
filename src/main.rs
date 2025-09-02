@@ -2,10 +2,6 @@ use clap::{Parser, Subcommand};
 
 mod commands {
     pub mod clone;
-    pub mod create;
-    pub mod list;
-    pub mod goto;
-    pub mod clean;
 }
 
 mod utils {
@@ -78,9 +74,9 @@ fn main() {
 
     match args.command {
         Commands::Clone { repository_address } => commands::clone::run(repository_address),
-        Commands::Create { root, new_branch_name } => commands::create::run(root, new_branch_name),
-        Commands::List { root } => commands::list::run(root),
-        Commands::Goto { root, cmd, tree } => commands::goto::run(root, cmd, tree),
-        Commands::Clean { root } => commands::clean::run(root),
+        Commands::Create { root, new_branch_name } => {},
+        Commands::List { root } => {},
+        Commands::Goto { root, cmd, tree } => {},
+        Commands::Clean { root } => {},
     }
 }
