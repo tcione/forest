@@ -87,17 +87,19 @@ impl Application {
     }
 
     fn setup(&self) {
-        std::fs::create_dir_all(&self.roots_dir).unwrap();
-        std::fs::create_dir_all(&self.trees_dir).unwrap();
+        self.pvt_handle(std::fs::create_dir_all(&self.roots_dir));
+        self.pvt_handle(std::fs::create_dir_all(&self.trees_dir));
     }
 
     fn clone(&self, repository_address: String) {
-        let rs = commands::clone::run(&self.roots_dir, repository_address);
+        self.pvt_handle(commands::clone::run(&self.roots_dir, repository_address))
+    }
 
-        if let Err(err) = rs {
+    fn pvt_handle<T, E: std::fmt::Display>(&self, rs: Result<T, E>) -> T {
+        rs.unwrap_or_else(|err| {
             eprintln!("{}", err);
             std::process::exit(1);
-        }
+        })
     }
 }
 
