@@ -8,3 +8,8 @@ clap = { version = "4.5.46", features = ["derive"] }
 serde = { version = "1.0.219", features = ["derive"] }
 directories = "5.0"
 toml = "0.8"
+regex = "1"
+anyhow = "1"
+
+[dev-dependencies]
+tempfile = "3.8"

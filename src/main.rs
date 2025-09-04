@@ -95,11 +95,18 @@ impl Application {
         self.pvt_handle(commands::clone::run(&self.roots_dir, repository_address))
     }
 
-    fn pvt_handle<T, E: std::fmt::Display>(&self, rs: Result<T, E>) -> T {
-        rs.unwrap_or_else(|err| {
-            eprintln!("{}", err);
-            std::process::exit(1);
-        })
+    fn create(&self, root: String, new_branch_name: String) {
+        self.pvt_handle(commands::create::run(&self.roots_dir, &self.trees_dir, &root, &new_branch_name))
+    }
+
+    fn pvt_handle<T, E: std::fmt::Debug>(&self, rs: Result<T, E>) -> T {
+        match rs {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("{:?}", e);
+                std::process::exit(1);
+            }
+        }
     }
 }
 
