@@ -32,10 +32,11 @@ pub fn run(roots_dir: &PathBuf, trees_dir: &PathBuf, root: &str, new_branch_name
 }
 
 fn tree_name(root: &str, new_branch_name: &str) -> String {
-    let regex = Regex::new(r"[^A-Za-z0-9\-_]").unwrap();
-    let normalized_branch_name = regex.replace_all(new_branch_name, "--");
+    let trimmed = new_branch_name.trim();
+    let regex = Regex::new(r"[^A-Za-z0-9\-_]+").unwrap();
+    let normalized = regex.replace_all(trimmed, "--");
 
-    format!("{}--{}", root, normalized_branch_name)
+    format!("{}--{}", root, &normalized)
 }
 
 fn default_branch(repo_root: &PathBuf) -> Result<String> {
