@@ -1,5 +1,4 @@
-use clap::{Parser, Subcommand};
-use std::path::PathBuf;
+mod application;
 
 mod commands {
     pub mod clone;
@@ -10,6 +9,8 @@ mod utils {
     pub mod config;
     pub mod path;
 }
+
+use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
 #[command(name = "forest")]
@@ -71,49 +72,9 @@ enum Commands {
     },
 }
 
-struct Application {
-    roots_dir: PathBuf,
-    trees_dir: PathBuf,
-}
-
-impl Application {
-    fn new() -> Self {
-        let config_dir = utils::path::config_dir().unwrap();
-        let config = utils::config::load_config(config_dir).unwrap();
-
-        Self {
-            roots_dir: PathBuf::from(&config.general.base_dir).join("roots"),
-            trees_dir: PathBuf::from(&config.general.base_dir).join("trees"),
-        }
-    }
-
-    fn setup(&self) {
-        self.pvt_handle(std::fs::create_dir_all(&self.roots_dir));
-        self.pvt_handle(std::fs::create_dir_all(&self.trees_dir));
-    }
-
-    fn clone(&self, repository_address: String) {
-        self.pvt_handle(commands::clone::run(&self.roots_dir, repository_address))
-    }
-
-    fn create(&self, root: String, new_branch_name: String) {
-        self.pvt_handle(commands::create::run(&self.roots_dir, &self.trees_dir, &root, &new_branch_name))
-    }
-
-    fn pvt_handle<T, E: std::fmt::Debug>(&self, rs: Result<T, E>) -> T {
-        match rs {
-            Ok(r) => r,
-            Err(e) => {
-                eprintln!("{:?}", e);
-                std::process::exit(1);
-            }
-        }
-    }
-}
-
 fn main() {
     let args = Cli::parse();
-    let forest = Application::new();
+    let forest = application::Application::new();
 
     forest.setup();
 
