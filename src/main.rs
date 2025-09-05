@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 mod commands {
     pub mod clone;
+    pub mod create;
 }
 
 mod utils {
@@ -118,7 +119,7 @@ fn main() {
 
     match args.command {
         Commands::Clone { repository_address } => forest.clone(repository_address),
-        Commands::Create { root, new_branch_name } => {},
+        Commands::Create { root, new_branch_name } => forest.create(root, new_branch_name),
         Commands::List { root } => {},
         Commands::Goto { root, cmd, tree } => {},
         Commands::Clean { root } => {},
