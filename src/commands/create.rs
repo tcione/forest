@@ -66,3 +66,74 @@ fn pull_latest(repo_root: &PathBuf, branch: &str) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+    use std::fs;
+    use crate::commands::clone;
+
+    const TEST_REPO_URL: &str = "https://github.com/tcione/test-repo.git";
+
+    fn tree_branch(tree_path: &PathBuf) -> Result<String> {
+        let output = std::process::Command::new("git")
+            .arg("-C")
+            .arg(tree_path)
+            .args(["branch", "--show-current"])
+            .output()
+            .context("Failed to get current branch")?;
+
+        if !output.status.success() {
+            anyhow::bail!("Failed to get current branch: {}", String::from_utf8_lossy(&output.stderr));
+        }
+
+        Ok(String::from_utf8(output.stdout)?.trim().to_string())
+    }
+
+    #[test]
+    fn test_create_worktree_success() {
+        let roots_dir = TempDir::new().unwrap().path().to_path_buf();
+        let trees_dir = TempDir::new().unwrap().path().to_path_buf();
+        let tree_path = trees_dir.join("test-repo--feature--new-feature");
+
+        clone::run(&roots_dir, TEST_REPO_URL.to_string()).unwrap();
+        run(&roots_dir, &trees_dir, "test-repo", "feature/new-feature").unwrap();
+
+        let tree_branch = tree_branch(&tree_path).unwrap();
+
+        assert_eq!(tree_branch, "feature/new-feature".to_string())
+    }
+
+    #[test]
+    fn test_tree_name() {
+      assert_eq!(tree_name("myrepo", "feature/normal"), "myrepo--feature--normal");
+      assert_eq!(tree_name("myrepo", "hotfix@at-you"), "myrepo--hotfix--at-you");
+      assert_eq!(tree_name("myrepo", "hotfix/@slash-at-you"), "myrepo--hotfix--slash-at-you");
+      assert_eq!(tree_name("myrepo", "feat/user-mgmt_new"), "myrepo--feat--user-mgmt_new");
+      assert_eq!(tree_name("myrepo", "feat//too-many-hyphens"), "myrepo--feat--too-many-hyphens");
+      assert_eq!(tree_name("myrepo", "feat/////way-too-many-hyphens"), "myrepo--feat--way-too-many-hyphens");
+      assert_eq!(tree_name("myrepo", "        feat/trimmed   "), "myrepo--feat--trimmed");
+    }
+
+    #[test]
+    fn test_create_with_nonexistent_repo() {
+        let roots_dir = TempDir::new().unwrap().path().to_path_buf();
+        let trees_dir = TempDir::new().unwrap().path().to_path_buf();
+        let err = run(&roots_dir, &trees_dir, "nonexistent-repo", "feature/test").unwrap_err();
+
+        assert!(err.to_string().contains("No such file or directory"))
+    }
+
+    #[test]
+    fn test_duplicate_branch_name() {
+        let roots_dir = TempDir::new().unwrap().path().to_path_buf();
+        let trees_dir = TempDir::new().unwrap().path().to_path_buf();
+
+        clone::run(&roots_dir, TEST_REPO_URL.to_string()).unwrap();
+        run(&roots_dir, &trees_dir, "test-repo", "feature/new-feature").unwrap();
+        let err = run(&roots_dir, &trees_dir, "test-repo", "feature/new-feature").unwrap_err();
+
+        assert!(err.to_string().contains("a branch named 'feature/new-feature' already exists"))
+    }
+}
