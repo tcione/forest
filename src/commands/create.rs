@@ -1,12 +1,13 @@
-use std::path::PathBuf;
+use anyhow::{Context, Result};
 use regex::Regex;
-use anyhow::{Result, Context};
+use std::path::PathBuf;
 
 use crate::application::Application;
 
-// TODO:
-// - root completion
-// - Handle already exists by using goto
+// TODO: root completion
+// TODO: Handle already exists by using goto
+// TODO: Handle exec in background and notify user using notify-rust
+//       For that I also need to have proper logs somewhere
 pub fn run(application: &Application, root: &str, new_branch_name: &str) -> Result<()> {
     // TODO: check if repo folder exists
     let roots_dir = &application.roots_dir;
@@ -16,21 +17,8 @@ pub fn run(application: &Application, root: &str, new_branch_name: &str) -> Resu
     let default_branch = default_branch(&repo_root)?;
 
     pull_latest(&repo_root, &default_branch)?;
-
-    let output = std::process::Command::new("git")
-        .arg("-C")
-        .arg(repo_root)
-        .args(["worktree", "add"])
-        .arg("-b")
-        .arg(new_branch_name)
-        .arg(branch_tree)
-        .arg(&default_branch)
-        .output()
-        .context("Failed to create new worktree")?;
-
-    if !output.status.success() {
-        anyhow::bail!("Create failed: {}", String::from_utf8_lossy(&output.stderr));
-    }
+    add_worktree(&repo_root, &new_branch_name, &branch_tree, &default_branch)?;
+    set_up_worktree(application, root, &repo_root, &branch_tree)?;
 
     Ok(())
 }
@@ -52,11 +40,19 @@ fn default_branch(repo_root: &PathBuf) -> Result<String> {
         .context("Failed to get default branch")?;
 
     if !output.status.success() {
-        anyhow::bail!("Failed to find default branch: {}", String::from_utf8_lossy(&output.stderr));
+        anyhow::bail!(
+            "Failed to find default branch: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
-    let branch_ref = String::from_utf8(output.stdout).context("Failed to convert default branch to string")?;
-    let filtered_branch = branch_ref.trim().strip_prefix("refs/remotes/origin/").unwrap_or("main").to_string();
+    let branch_ref =
+        String::from_utf8(output.stdout).context("Failed to convert default branch to string")?;
+    let filtered_branch = branch_ref
+        .trim()
+        .strip_prefix("refs/remotes/origin/")
+        .unwrap_or("main")
+        .to_string();
 
     Ok(filtered_branch)
 }
@@ -70,6 +66,109 @@ fn pull_latest(repo_root: &PathBuf, branch: &str) -> Result<()> {
         .context("Failed to pull default branch")?;
 
     Ok(())
+}
+
+fn add_worktree(
+    repo_root: &PathBuf,
+    new_branch_name: &str,
+    branch_tree: &PathBuf,
+    default_branch: &str,
+) -> Result<()> {
+    let output = std::process::Command::new("git")
+        .arg("-C")
+        .arg(repo_root)
+        .args(["worktree", "add"])
+        .arg("-b")
+        .arg(new_branch_name)
+        .arg(branch_tree)
+        .arg(default_branch)
+        .output()
+        .context("Failed to create new worktree")?;
+
+    if !output.status.success() {
+        anyhow::bail!("Create failed: {}", String::from_utf8_lossy(&output.stderr));
+    }
+
+    Ok(())
+}
+
+fn set_up_worktree(
+    application: &Application,
+    root: &str,
+    repo_root: &PathBuf,
+    branch_tree: &PathBuf,
+) -> Result<()> {
+    let (copy, exec) = if let Some(root_config) = application.config.roots.get(root) {
+        (&root_config.copy, &root_config.exec)
+    } else {
+        (
+            &application.config.general.copy,
+            &application.config.general.exec,
+        )
+    };
+
+    copy_files(root, repo_root, branch_tree, copy);
+    exec_commands(root, branch_tree, exec);
+
+    Ok(())
+}
+
+fn copy_files(root: &str, repo_root: &PathBuf, branch_tree: &PathBuf, copy: &Vec<String>) {
+    for file_name in copy {
+        let source = repo_root.join(file_name);
+        let destination = branch_tree.join(file_name);
+
+        if !source.exists() {
+            println!(
+                "Skipping: \"{}\" does not exist in \"{}\"",
+                &file_name, &root
+            );
+            continue;
+        }
+
+        if let Err(e) = std::fs::copy(&source, &destination) {
+            println!(
+                "Failed to copy \"{}\" to \"{}\". Error: {:?}",
+                &file_name, &root, &e
+            );
+            continue;
+        }
+
+        println!("Copied \"{}\" to \"{}\"", &file_name, &root);
+    }
+}
+
+fn exec_commands(root: &str, branch_tree: &PathBuf, exec: &Vec<String>) {
+    for command in exec {
+        let output = std::process::Command::new("sh")
+            .arg("-c")
+            .arg(command)
+            .current_dir(branch_tree)
+            .output();
+
+        if let Err(e) = output {
+            println!(
+                "Failed to execute \"{}\" for \"{}\". Error: {:?}",
+                &command, &root, &e
+            );
+            continue;
+        }
+
+        let output_unwrapped = output.unwrap();
+
+        if !output_unwrapped.status.success() {
+            println!(
+                "Failed to execute \"{}\" for \"{}\". Error: {}",
+                &command,
+                &root,
+                String::from_utf8_lossy(&output_unwrapped.stderr)
+            );
+            continue;
+        }
+
+        println!("Executed \"{}\" in \"{}\"", &command, &root);
+        println!("Output:\n{}", String::from_utf8_lossy(&output_unwrapped.stdout));
+    }
 }
 
 #[cfg(test)]
