@@ -2,11 +2,15 @@ use std::path::PathBuf;
 use regex::Regex;
 use anyhow::{Result, Context};
 
+use crate::application::Application;
+
 // TODO:
 // - root completion
-// - Maybe? "fatal: a branch named 'feature/maybe-a-rust-rewrite' already exists"
-pub fn run(roots_dir: &PathBuf, trees_dir: &PathBuf, root: &str, new_branch_name: &str) -> Result<()> {
-    // check if repo folder exists
+// - Handle already exists by using goto
+pub fn run(application: &Application, root: &str, new_branch_name: &str) -> Result<()> {
+    // TODO: check if repo folder exists
+    let roots_dir = &application.roots_dir;
+    let trees_dir = &application.trees_dir;
     let repo_root = roots_dir.join(root);
     let branch_tree = trees_dir.join(tree_name(root, new_branch_name));
     let default_branch = default_branch(&repo_root)?;

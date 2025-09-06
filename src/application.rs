@@ -32,7 +32,7 @@ impl Application {
     }
 
     pub fn create(&self, root: String, new_branch_name: String) {
-        self.pvt_handle(create::run(&self.roots_dir, &self.trees_dir, &root, &new_branch_name))
+        self.pvt_handle(create::run(self, &root, &new_branch_name))
     }
 
     fn pvt_handle<T, E: std::fmt::Debug>(&self, rs: Result<T, E>) -> T {
