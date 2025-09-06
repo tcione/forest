@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
-use crate::utils::config::{Config, load_config};
-use crate::utils::path::{config_dir};
 use crate::commands::{clone, create};
+use crate::utils::config::{Config, load_config};
+use crate::utils::path::config_dir;
 
 pub struct Application {
     pub roots_dir: PathBuf,
@@ -44,4 +44,34 @@ impl Application {
             }
         }
     }
+}
+
+#[cfg(test)]
+pub fn test_application(
+    copy: Vec<String>,
+    exec: Vec<String>,
+    roots: std::collections::HashMap<String, crate::utils::config::RootConfig>,
+) -> Application {
+    let unique_id = format!("{:?}_{}", std::thread::current().id(), std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos());
+    let base_dir = std::env::temp_dir().join(format!("forest_test_{}", unique_id));
+
+    let application = Application {
+        roots_dir: base_dir.join("roots").to_path_buf(),
+        trees_dir: base_dir.join("trees").to_path_buf(),
+        config: crate::utils::config::Config {
+            general: crate::utils::config::GeneralConfig {
+                base_dir: base_dir.to_string_lossy().to_string(),
+                copy: copy,
+                exec: exec,
+            },
+            roots: roots,
+        },
+    };
+
+    application.setup();
+
+    application
 }
