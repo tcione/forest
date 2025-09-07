@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::commands::{clone, create};
+use crate::commands::{roots, trees};
 use crate::utils::config::{Config, load_config};
 use crate::utils::path::config_dir;
 
@@ -27,12 +27,12 @@ impl Application {
         self.pvt_handle(std::fs::create_dir_all(&self.trees_dir));
     }
 
-    pub fn clone(&self, repository_address: String) {
-        self.pvt_handle(clone::run(&self.roots_dir, repository_address))
+    pub fn roots_clone(&self, repository_address: String) {
+        self.pvt_handle(roots::clone::run(&self.roots_dir, repository_address))
     }
 
-    pub fn create(&self, root: String, new_branch_name: String) {
-        self.pvt_handle(create::run(&self, &root, &new_branch_name))
+    pub fn trees_create(&self, root: String, new_branch_name: String) {
+        self.pvt_handle(trees::create::run(&self, &root, &new_branch_name))
     }
 
     fn pvt_handle<T, E: std::fmt::Debug>(&self, rs: Result<T, E>) -> T {

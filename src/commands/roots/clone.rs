@@ -1,8 +1,7 @@
 use std::path::PathBuf;
 use anyhow::{Result, Context};
 
-// TODO
-// - Handle github:org/repo
+// TODO: Handle github:org/repo
 pub fn run(roots_dir: &PathBuf, repository_address: String) -> Result<()> {
     let gitless_repo_address = repository_address.replace(".git", "");
     let repo_name = gitless_repo_address.split('/').last().context("Invalid repository URL")?;
@@ -21,8 +20,6 @@ pub fn run(roots_dir: &PathBuf, repository_address: String) -> Result<()> {
     println!("{} cloned into {}", repo_name, repo_dir.display());
     Ok(())
 }
-
-//
 
 #[cfg(test)]
 mod tests {

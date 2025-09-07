@@ -179,7 +179,7 @@ mod tests {
     use std::collections::HashMap;
     use std::fs;
     use tempfile::TempDir;
-    use crate::commands::clone;
+    use crate::commands::roots::clone;
     use crate::application::test_application;
     use crate::utils::config::RootConfig;
 
