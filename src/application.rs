@@ -47,31 +47,46 @@ impl Application {
 }
 
 #[cfg(test)]
+pub struct TestApplication {
+    pub application: Application,
+    pub _temp_dir: tempfile::TempDir, // kept for RAII
+}
+
+#[cfg(test)]
+impl std::ops::Deref for TestApplication {
+    type Target = Application;
+
+    fn deref(&self) -> &Self::Target {
+        &self.application
+    }
+}
+
+#[cfg(test)]
 pub fn test_application(
     copy: Vec<String>,
     exec: Vec<String>,
     roots: std::collections::HashMap<String, crate::utils::config::RootConfig>,
-) -> Application {
-    let unique_id = format!("{:?}_{}", std::thread::current().id(), std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_nanos());
-    let base_dir = std::env::temp_dir().join(format!("forest_test_{}", unique_id));
+) -> TestApplication {
+    let base_temp_dir = tempfile::TempDir::new().unwrap();
+    let base_dir = base_temp_dir.path();
 
     let application = Application {
-        roots_dir: base_dir.join("roots").to_path_buf(),
-        trees_dir: base_dir.join("trees").to_path_buf(),
+        roots_dir: base_dir.join("roots"),
+        trees_dir: base_dir.join("trees"),
         config: crate::utils::config::Config {
             general: crate::utils::config::GeneralConfig {
                 base_dir: base_dir.to_string_lossy().to_string(),
-                copy: copy,
-                exec: exec,
+                copy,
+                exec,
             },
-            roots: roots,
+            roots,
         },
     };
 
     application.setup();
 
-    application
+    TestApplication {
+        application,
+        _temp_dir: base_temp_dir,
+    }
 }
