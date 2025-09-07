@@ -31,6 +31,7 @@ fn tree_name(root: &str, new_branch_name: &str) -> String {
     format!("{}--{}", root, &normalized)
 }
 
+// TODO: Fix so this is more reliable. What happens if there's no remote?
 fn default_branch(repo_root: &PathBuf) -> Result<String> {
     let output = std::process::Command::new("git")
         .arg("-C")
@@ -57,6 +58,7 @@ fn default_branch(repo_root: &PathBuf) -> Result<String> {
     Ok(filtered_branch)
 }
 
+// TODO: Fix so this is more reliable. What happens if there's no remote?
 fn pull_latest(repo_root: &PathBuf, branch: &str) -> Result<()> {
     std::process::Command::new("git")
         .arg("-C")
@@ -174,13 +176,16 @@ fn exec_commands(root: &str, branch_tree: &PathBuf, exec: &Vec<String>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::commands::clone;
-    // use tempfile::TempDir;
     use std::collections::HashMap;
+    use std::fs;
+    use tempfile::TempDir;
+    use crate::commands::clone;
     use crate::application::test_application;
+    use crate::utils::config::RootConfig;
 
     const TEST_REPO_URL: &str = "https://github.com/tcione/test-repo.git";
 
+    // Utils
     fn tree_branch(tree_path: &PathBuf) -> Result<String> {
         let output = std::process::Command::new("git")
             .arg("-C")
@@ -199,19 +204,51 @@ mod tests {
         Ok(String::from_utf8(output.stdout)?.trim().to_string())
     }
 
+    // End-to-end
     #[test]
     fn test_create_worktree_success() {
-        let application = test_application(vec![], vec![], HashMap::new());
+        let application = test_application(
+            vec![".env".to_string()],
+            vec!["echo 'setup complete' > setup_via_exec.txt".to_string()],
+            HashMap::new()
+        );
         let tree_path = application.trees_dir.join("test-repo--feature--new-feature");
 
         clone::run(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
+        fs::write(&application.roots_dir.join("test-repo").join(".env"), "VAR=test").unwrap();
+
         run(&application, "test-repo", "feature/new-feature").unwrap();
 
         let tree_branch = tree_branch(&tree_path).unwrap();
 
-        assert_eq!(tree_branch, "feature/new-feature".to_string())
+        assert_eq!(tree_branch, "feature/new-feature".to_string());
+        assert!(tree_path.join(".env").exists());
+        assert!(tree_path.join("setup_via_exec.txt").exists());
     }
 
+    #[test]
+    fn test_create_with_nonexistent_repo() {
+        let application = test_application(vec![], vec![], HashMap::new());
+        let err = run(&application, "nonexistent-repo", "feature/test").unwrap_err();
+
+        assert!(err.to_string().contains("No such file or directory"))
+    }
+
+    #[test]
+    fn test_duplicate_branch_name() {
+        let application = test_application(vec![], vec![], HashMap::new());
+
+        clone::run(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
+        run(&application, "test-repo", "feature/new-feature").unwrap();
+        let err = run(&application, "test-repo", "feature/new-feature").unwrap_err();
+
+        assert!(
+            err.to_string()
+                .contains("a branch named 'feature/new-feature' already exists")
+        )
+    }
+
+    // Unit
     #[test]
     fn test_tree_name() {
         assert_eq!(
@@ -245,24 +282,171 @@ mod tests {
     }
 
     #[test]
-    fn test_create_with_nonexistent_repo() {
-        let application = test_application(vec![], vec![], HashMap::new());
-        let err = run(&application, "nonexistent-repo", "feature/test").unwrap_err();
+    fn test_copy_files_with_empty_list() {
+        let repo_root = TempDir::new().unwrap();
+        let branch_tree = TempDir::new().unwrap();
+        let empty_copy_list = vec![];
 
-        assert!(err.to_string().contains("No such file or directory"))
+        copy_files(
+            "test-repo",
+            &repo_root.path().to_path_buf(),
+            &branch_tree.path().to_path_buf(),
+            &empty_copy_list
+        );
+
+        assert_eq!(branch_tree.path().read_dir().unwrap().count(), 0);
+        // TODO: Augment checking logs once I implement logging
     }
 
     #[test]
-    fn test_duplicate_branch_name() {
-        let application = test_application(vec![], vec![], HashMap::new());
+    fn test_copy_files_filled_list() {
+        let repo_root = TempDir::new().unwrap();
+        let branch_tree = TempDir::new().unwrap();
 
-        clone::run(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
-        run(&application, "test-repo", "feature/new-feature").unwrap();
-        let err = run(&application, "test-repo", "feature/new-feature").unwrap_err();
+        fs::write(repo_root.path().join("file1.txt"), "content1").unwrap();
+        fs::write(repo_root.path().join("file2.txt"), "content2").unwrap();
 
-        assert!(
-            err.to_string()
-                .contains("a branch named 'feature/new-feature' already exists")
-        )
+        let copy_list = vec![
+            "file1.txt".to_string(),
+            "nonexistent.txt".to_string(),
+            "file2.txt".to_string()
+        ];
+
+        copy_files(
+            "test-repo",
+            &repo_root.path().to_path_buf(),
+            &branch_tree.path().to_path_buf(),
+            &copy_list
+        );
+
+        assert!(branch_tree.path().join("file1.txt").exists());
+        assert!(branch_tree.path().join("file2.txt").exists());
+        assert_eq!(fs::read_to_string(branch_tree.path().join("file1.txt")).unwrap(), "content1");
+        assert_eq!(fs::read_to_string(branch_tree.path().join("file2.txt")).unwrap(), "content2");
+        assert!(!branch_tree.path().join("nonexistent.txt").exists());
+        // TODO: Augment checking logs once I implement logging
+    }
+
+    #[test]
+    fn test_exec_commands_with_empty_list() {
+        let branch_tree = TempDir::new().unwrap();
+        let empty_exec_list = vec![];
+
+        exec_commands(
+            "test-repo",
+            &branch_tree.path().to_path_buf(),
+            &empty_exec_list
+        );
+
+        // Function completes without panicking - that's the test
+        // TODO: Augment checking logs once I implement logging
+    }
+
+    #[test]
+    fn test_exec_commands_with_existing_commands() {
+        let branch_tree = TempDir::new().unwrap();
+        let exec_list = vec![
+            "echo 'test output' > output.txt".to_string(),
+            "ls".to_string()
+        ];
+
+        exec_commands(
+            "test-repo",
+            &branch_tree.path().to_path_buf(),
+            &exec_list
+        );
+
+        // Verify first command created the file
+        assert!(branch_tree.path().join("output.txt").exists());
+        assert_eq!(
+            fs::read_to_string(branch_tree.path().join("output.txt")).unwrap().trim(),
+            "test output"
+        );
+        // TODO: Augment checking logs once I implement logging
+    }
+
+    #[test]
+    fn test_exec_commands_with_non_existing_commands() {
+        let branch_tree = TempDir::new().unwrap();
+        let exec_list = vec![
+            "nonexistent_command".to_string(),
+            "echo 'still works' > success.txt".to_string()
+        ];
+
+        exec_commands(
+            "test-repo",
+            &branch_tree.path().to_path_buf(),
+            &exec_list
+        );
+
+        assert!(branch_tree.path().join("success.txt").exists());
+        assert_eq!(
+            fs::read_to_string(branch_tree.path().join("success.txt")).unwrap().trim(),
+            "still works"
+        );
+        // TODO: Augment checking logs once I implement logging
+    }
+
+    #[test]
+    fn test_set_up_worktree_no_root_config() {
+        let application = test_application(
+            vec!["general_file.txt".to_string()],
+            vec!["echo 'general command' > general_output.txt".to_string()],
+            HashMap::new()
+        );
+        let repo_root = TempDir::new().unwrap();
+        let branch_tree = TempDir::new().unwrap();
+
+        fs::write(repo_root.path().join("general_file.txt"), "general content").unwrap();
+
+        set_up_worktree(
+            &application,
+            "test-repo",
+            &repo_root.path().to_path_buf(),
+            &branch_tree.path().to_path_buf()
+        ).unwrap();
+
+        assert!(branch_tree.path().join("general_file.txt").exists());
+        assert_eq!(
+            fs::read_to_string(branch_tree.path().join("general_file.txt")).unwrap(),
+            "general content"
+        );
+        assert!(branch_tree.path().join("general_output.txt").exists());
+        assert_eq!(
+            fs::read_to_string(branch_tree.path().join("general_output.txt")).unwrap().trim(),
+            "general command"
+        );
+    }
+
+    #[test]
+    fn test_set_up_worktree_with_root_config() {
+        let mut root_configs = HashMap::new();
+        root_configs.insert("test-repo".to_string(), RootConfig {
+            copy: vec!["root_file.txt".to_string()],
+            exec: vec!["echo 'root command' > root_output.txt".to_string()],
+        });
+
+        let application = test_application(
+            vec!["general_file.txt".to_string()],
+            vec!["echo 'general command' > general_output.txt".to_string()],
+            root_configs
+        );
+        let repo_root = TempDir::new().unwrap();
+        let branch_tree = TempDir::new().unwrap();
+
+        fs::write(repo_root.path().join("general_file.txt"), "general content").unwrap();
+        fs::write(repo_root.path().join("root_file.txt"), "root content").unwrap();
+
+        set_up_worktree(
+            &application,
+            "test-repo",
+            &repo_root.path().to_path_buf(),
+            &branch_tree.path().to_path_buf()
+        ).unwrap();
+
+        assert!(branch_tree.path().join("root_file.txt").exists());
+        assert!(!branch_tree.path().join("general_file.txt").exists());
+        assert!(branch_tree.path().join("root_output.txt").exists());
+        assert!(!branch_tree.path().join("general_output.txt").exists());
     }
 }
