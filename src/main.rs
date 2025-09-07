@@ -118,14 +118,20 @@ fn main() {
         Commands::Roots(roots_cmd) => match roots_cmd {
             RootsCommands::Clone { repository_address } => forest.roots_clone(repository_address),
             RootsCommands::List => {},
+            #[allow(unused_variables)]
             RootsCommands::Enter { root } => {},
+            #[allow(unused_variables)]
             RootsCommands::Exec { root, command } => {},
         },
         Commands::Trees(trees_cmd) => match trees_cmd {
             TreesCommands::Create { root, new_branch_name } => forest.trees_create(root, new_branch_name),
+            #[allow(unused_variables)]
             TreesCommands::List { root } => {},
+            #[allow(unused_variables)]
             TreesCommands::Enter { tree } => {},
+            #[allow(unused_variables)]
             TreesCommands::Exec { tree, command } => {},
+            #[allow(unused_variables)]
             TreesCommands::Clean { root } => {},
         },
     }
