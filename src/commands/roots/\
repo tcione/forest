@@ -1,0 +1,26 @@
+use anyhow::{Context, Result};
+use std::fs::read_dir;
+use std::path::PathBuf;
+
+pub fn run(roots_dir: &PathBuf) -> Result<()> {
+    let mut has_projects = false;
+
+    for root in read_dir(roots_dir.to_string_lossy().to_string())? {
+        let root = root?;
+        if !root.file_type()?.is_dir() {
+            continue;
+        }
+
+        has_projects = true;
+        let project = root.file_name();
+        let path = root.path();
+
+        println!(
+            "{} -> {}",
+            project.to_string_lossy(),
+            path.to_string_lossy(),
+        );
+    }
+
+    Ok(())
+}

@@ -31,6 +31,10 @@ impl Application {
         self.pvt_handle(roots::clone::run(&self.roots_dir, repository_address))
     }
 
+    pub fn roots_list(&self) {
+        self.pvt_handle(roots::list::run(&self.roots_dir))
+    }
+
     pub fn trees_create(&self, root: String, new_branch_name: String) {
         self.pvt_handle(trees::create::run(&self, &root, &new_branch_name))
     }

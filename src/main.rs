@@ -3,6 +3,7 @@ mod application;
 mod commands {
     pub mod roots {
         pub mod clone;
+        pub mod list;
     }
     pub mod trees {
         pub mod create;
@@ -117,7 +118,7 @@ fn main() {
     match args.command {
         Commands::Roots(roots_cmd) => match roots_cmd {
             RootsCommands::Clone { repository_address } => forest.roots_clone(repository_address),
-            RootsCommands::List => {},
+            RootsCommands::List => { forest.roots_list() },
             #[allow(unused_variables)]
             RootsCommands::Enter { root } => {},
             #[allow(unused_variables)]
