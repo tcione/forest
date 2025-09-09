@@ -4,6 +4,7 @@ mod commands {
     pub mod roots {
         pub mod clone;
         pub mod list;
+        pub mod exec;
     }
     pub mod trees {
         pub mod create;
@@ -121,8 +122,7 @@ fn main() {
             RootsCommands::List => { forest.roots_list() },
             #[allow(unused_variables)]
             RootsCommands::Enter { root } => {},
-            #[allow(unused_variables)]
-            RootsCommands::Exec { root, command } => {},
+            RootsCommands::Exec { root, command } => { forest.roots_exec(root, command) },
         },
         Commands::Trees(trees_cmd) => match trees_cmd {
             TreesCommands::Create { root, new_branch_name } => forest.trees_create(root, new_branch_name),

@@ -35,6 +35,10 @@ impl Application {
         self.pvt_handle(roots::list::run(&self.roots_dir))
     }
 
+    pub fn roots_exec(&self, root: String, command: String) {
+        self.pvt_handle(roots::exec::run(&self.roots_dir, root, command))
+    }
+
     pub fn trees_create(&self, root: String, new_branch_name: String) {
         self.pvt_handle(trees::create::run(&self, &root, &new_branch_name))
     }
