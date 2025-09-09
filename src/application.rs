@@ -35,6 +35,10 @@ impl Application {
         self.pvt_handle(roots::list::run(&self.roots_dir))
     }
 
+    pub fn roots_enter(&self, root: String) {
+        self.pvt_handle(roots::enter::run(&self.roots_dir, root))
+    }
+
     pub fn roots_exec(&self, root: String, command: String) {
         self.pvt_handle(roots::exec::run(&self.roots_dir, root, command))
     }

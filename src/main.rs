@@ -4,6 +4,7 @@ mod commands {
     pub mod roots {
         pub mod clone;
         pub mod list;
+        pub mod enter;
         pub mod exec;
     }
     pub mod trees {
@@ -120,8 +121,7 @@ fn main() {
         Commands::Roots(roots_cmd) => match roots_cmd {
             RootsCommands::Clone { repository_address } => forest.roots_clone(repository_address),
             RootsCommands::List => { forest.roots_list() },
-            #[allow(unused_variables)]
-            RootsCommands::Enter { root } => {},
+            RootsCommands::Enter { root } => { forest.roots_enter(root) },
             RootsCommands::Exec { root, command } => { forest.roots_exec(root, command) },
         },
         Commands::Trees(trees_cmd) => match trees_cmd {

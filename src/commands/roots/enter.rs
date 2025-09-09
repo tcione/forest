@@ -1,0 +1,49 @@
+use anyhow::Result;
+use std::path::PathBuf;
+
+// TODO: bind this to forest init (gen bash/zsh/fish functions)
+// TODO: Maybe rename "enter" to "dir"
+pub fn run(roots_dir: &PathBuf, root: String) -> Result<()> {
+    let root_dir = roots_dir.join(&root);
+
+    if !root_dir.exists() {
+        anyhow::bail!("Root {} does not exist.", &root);
+    }
+
+    println!("{}", root_dir.display());
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::create_dir_all;
+    use tempfile::TempDir;
+
+    #[test]
+    fn test_enter_existing_root() {
+        let roots_tmp_dir = TempDir::new().unwrap();
+        let roots_dir = roots_tmp_dir.path().to_path_buf();
+        let root_dir = roots_dir.join("test-repo");
+
+        create_dir_all(&root_dir).unwrap();
+
+        let result = run(&roots_dir, "test-repo".to_string());
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_enter_nonexistent_root() {
+        let roots_tmp_dir = TempDir::new().unwrap();
+        let roots_dir = roots_tmp_dir.path().to_path_buf();
+
+        let result = run(&roots_dir, "nonexistent-repo".to_string());
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Root nonexistent-repo does not exist")
+        );
+    }
+}
