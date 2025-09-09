@@ -88,22 +88,24 @@ enum TreesCommands {
     /// Enter a worktree directory
     #[command(arg_required_else_help = true)]
     Enter {
-        /// Tree to enter using ROOT:BRANCH format
-        #[arg(value_name = "ROOT:BRANCH")]
+        /// The repository name (same as the name of the folder in your system)
+        root: String,
+        /// Branch you'll enter
         tree: String,
     },
 
     /// Execute command in worktree directory
     #[command(arg_required_else_help = true)]
     Exec {
-        /// Tree using ROOT:BRANCH format
-        #[arg(value_name = "ROOT:BRANCH")]
+        /// The repository name (same as the name of the folder in your system)
+        root: String,
+        /// Branch you'll enter
         tree: String,
         /// Command to execute
         command: String,
     },
 
-    /// Clean up worktrees
+    /// Clean up worktrees interactively
     Clean {
         /// Filter by root
         #[arg(long)]
