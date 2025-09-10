@@ -32,7 +32,19 @@ impl Application {
     }
 
     pub fn roots_list(&self) {
-        self.pvt_handle(roots::list::run(&self.roots_dir))
+        match roots::list::run(&self.roots_dir) {
+            Ok(roots) => {
+                if roots.is_empty() {
+                    println!("No roots available");
+                    return;
+                }
+
+                for root in roots {
+                    println!("{} -> {}", &root.name, &root.path.display());
+                }
+            },
+            Err(_) => self.expected_error("Roots directory does not exist!")
+        }
     }
 
     pub fn roots_enter(&self, root: String) {
@@ -45,6 +57,15 @@ impl Application {
 
     pub fn trees_create(&self, root: String, new_branch_name: String) {
         self.pvt_handle(trees::create::run(&self, &root, &new_branch_name))
+    }
+
+    pub fn trees_list(&self, root: Option<String>) {
+        self.pvt_handle(trees::list::run(&self, &root))
+    }
+
+    fn expected_error(&self, message: &str) {
+        eprintln!("Error: {}", message);
+        std::process::exit(1);
     }
 
     fn pvt_handle<T, E: std::fmt::Debug>(&self, rs: Result<T, E>) -> T {
