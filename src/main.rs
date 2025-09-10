@@ -9,6 +9,7 @@ mod commands {
     }
     pub mod trees {
         pub mod create;
+        pub mod list;
     }
 }
 
@@ -128,12 +129,11 @@ fn main() {
         },
         Commands::Trees(trees_cmd) => match trees_cmd {
             TreesCommands::Create { root, new_branch_name } => forest.trees_create(root, new_branch_name),
+            TreesCommands::List { root } => { forest.trees_list(root) },
             #[allow(unused_variables)]
-            TreesCommands::List { root } => {},
+            TreesCommands::Enter { tree, root } => {},
             #[allow(unused_variables)]
-            TreesCommands::Enter { tree } => {},
-            #[allow(unused_variables)]
-            TreesCommands::Exec { tree, command } => {},
+            TreesCommands::Exec { tree, command, root } => {},
             #[allow(unused_variables)]
             TreesCommands::Clean { root } => {},
         },
