@@ -60,10 +60,15 @@ impl Application {
     }
 
     pub fn trees_list(&self, root: Option<String>) {
-        self.pvt_handle(trees::list::run(&self, &root))
+        match trees::list::run(&self, &root) {
+            Ok(trees) => {
+                println!("{:?}", trees);
+            },
+            Err(err) => self.expected_error(err)
+        }
     }
 
-    fn expected_error(&self, message: &str) {
+    fn expected_error<T: std::fmt::Display>(&self, message: T) {
         eprintln!("Error: {}", message);
         std::process::exit(1);
     }
