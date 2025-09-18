@@ -1,4 +1,5 @@
 mod application;
+mod trees;
 
 mod commands {
     pub mod roots {
@@ -6,10 +7,6 @@ mod commands {
         pub mod list;
         pub mod enter;
         pub mod exec;
-    }
-    pub mod trees {
-        pub mod create;
-        pub mod list;
     }
 }
 

@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
-use crate::commands::{roots, trees};
+use crate::trees;
+use crate::commands::{roots};
 use crate::utils::config::{Config, load_config};
 use crate::utils::path::config_dir;
 
@@ -56,11 +57,11 @@ impl Application {
     }
 
     pub fn trees_create(&self, root: String, new_branch_name: String) {
-        self.pvt_handle(trees::create::run(&self, &root, &new_branch_name))
+        self.pvt_handle(trees::create::call(&self, &root, &new_branch_name))
     }
 
     pub fn trees_list(&self, root: Option<String>) {
-        match trees::list::run(&self, &root) {
+        match trees::list::call(&self, &root) {
             Ok(trees) => {
                 println!("{:?}", trees);
             },

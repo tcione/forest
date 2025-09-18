@@ -1,23 +1,12 @@
 use anyhow::{Context, Result};
-use std::collections::HashMap;
 use std::path::PathBuf;
 
+use super::{Tree, Trees, RootsTrees};
 use crate::application::Application;
 use crate::commands::roots;
 
-type RootsTrees = HashMap<String, Trees>;
-type Trees = Vec<Tree>;
-
-#[derive(Debug, PartialEq)]
-pub struct Tree {
-    pub name: String,
-    pub path: PathBuf,
-    pub branch: String,
-    pub head: String,
-}
-
 // TODO: Decide if should filter default branch
-pub fn run(application: &Application, root: &Option<String>) -> Result<RootsTrees> {
+pub fn call(application: &Application, root: &Option<String>) -> Result<RootsTrees> {
     let roots = roots::list::run(&application.roots_dir).context("Failed to list roots")?;
 
     let filtered_roots = if let Some(given_root) = root {
@@ -133,7 +122,7 @@ mod test {
             .output()
             .unwrap();
 
-        let result = run(&application, &None).unwrap();
+        let result = call(&application, &None).unwrap();
 
         assert_eq!(result.len(), 2);
 
@@ -171,7 +160,7 @@ mod test {
             .output()
             .unwrap();
 
-        let result = run(&application, &Some("repo1".to_string())).unwrap();
+        let result = call(&application, &Some("repo1".to_string())).unwrap();
 
         assert_eq!(result.len(), 1);
         assert_eq!(result["repo1"].len(), 1);

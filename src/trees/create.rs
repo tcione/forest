@@ -8,7 +8,7 @@ use crate::application::Application;
 // TODO: Handle already exists by using goto
 // TODO: Handle exec in background and notify user using notify-rust
 //       For that I also need to have proper logs somewhere
-pub fn run(application: &Application, root: &str, new_branch_name: &str) -> Result<()> {
+pub fn call(application: &Application, root: &str, new_branch_name: &str) -> Result<()> {
     // TODO: check if repo folder exists
     let roots_dir = &application.roots_dir;
     let trees_dir = &application.trees_dir;
@@ -217,7 +217,7 @@ mod tests {
         clone::run(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
         fs::write(&application.roots_dir.join("test-repo").join(".env"), "VAR=test").unwrap();
 
-        run(&application, "test-repo", "feature/new-feature").unwrap();
+        call(&application, "test-repo", "feature/new-feature").unwrap();
 
         let tree_branch = tree_branch(&tree_path).unwrap();
 
@@ -229,7 +229,7 @@ mod tests {
     #[test]
     fn test_create_with_nonexistent_repo() {
         let application = test_application(vec![], vec![], HashMap::new());
-        let err = run(&application, "nonexistent-repo", "feature/test").unwrap_err();
+        let err = call(&application, "nonexistent-repo", "feature/test").unwrap_err();
 
         assert!(err.to_string().contains("No such file or directory"))
     }
@@ -239,8 +239,8 @@ mod tests {
         let application = test_application(vec![], vec![], HashMap::new());
 
         clone::run(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
-        run(&application, "test-repo", "feature/new-feature").unwrap();
-        let err = run(&application, "test-repo", "feature/new-feature").unwrap_err();
+        call(&application, "test-repo", "feature/new-feature").unwrap();
+        let err = call(&application, "test-repo", "feature/new-feature").unwrap_err();
 
         assert!(
             err.to_string()
