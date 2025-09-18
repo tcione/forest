@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 // TODO: bind this to forest init (gen bash/zsh/fish functions)
 // TODO: Maybe rename "enter" to "dir"
-pub fn run(roots_dir: &PathBuf, root: String) -> Result<()> {
+pub fn call(roots_dir: &PathBuf, root: String) -> Result<()> {
     let root_dir = roots_dir.join(&root);
 
     if !root_dir.exists() {
@@ -28,7 +28,7 @@ mod tests {
 
         create_dir_all(&root_dir).unwrap();
 
-        let result = run(&roots_dir, "test-repo".to_string());
+        let result = call(&roots_dir, "test-repo".to_string());
         assert!(result.is_ok());
     }
 
@@ -37,7 +37,7 @@ mod tests {
         let roots_tmp_dir = TempDir::new().unwrap();
         let roots_dir = roots_tmp_dir.path().to_path_buf();
 
-        let result = run(&roots_dir, "nonexistent-repo".to_string());
+        let result = call(&roots_dir, "nonexistent-repo".to_string());
         assert!(result.is_err());
         assert!(
             result

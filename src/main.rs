@@ -1,14 +1,6 @@
 mod application;
 mod trees;
-
-mod commands {
-    pub mod roots {
-        pub mod clone;
-        pub mod list;
-        pub mod enter;
-        pub mod exec;
-    }
-}
+mod roots;
 
 mod utils {
     pub mod config;

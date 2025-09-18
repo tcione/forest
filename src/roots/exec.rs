@@ -1,7 +1,7 @@
 use anyhow::{Result};
 use std::path::PathBuf;
 
-pub fn run(roots_dir: &PathBuf, root: String, command: String) -> Result<()> {
+pub fn call(roots_dir: &PathBuf, root: String, command: String) -> Result<()> {
     let root_dir = roots_dir.join(&root);
 
     let output = std::process::Command::new("sh")
@@ -38,7 +38,7 @@ mod tests {
 
         create_dir_all(&root_dir).unwrap();
 
-        run(&roots_dir, "test-repo".to_string(), "echo testing > testfile.txt".to_string()).unwrap();
+        call(&roots_dir, "test-repo".to_string(), "echo testing > testfile.txt".to_string()).unwrap();
 
         assert!(root_dir.join("testfile.txt").exists());
         assert_eq!(read_to_string(root_dir.join("testfile.txt")).unwrap(), "testing\n");
@@ -52,7 +52,7 @@ mod tests {
 
         create_dir_all(&root_dir).unwrap();
 
-        let output = run(&roots_dir, "test-repo".to_string(), "nosuchcommand".to_string());
+        let output = call(&roots_dir, "test-repo".to_string(), "nosuchcommand".to_string());
 
         assert!(output.is_err());
         assert!(output.unwrap_err().to_string().contains("command not found"));

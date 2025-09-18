@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::trees;
-use crate::commands::{roots};
+use crate::roots;
 use crate::utils::config::{Config, load_config};
 use crate::utils::path::config_dir;
 
@@ -29,11 +29,11 @@ impl Application {
     }
 
     pub fn roots_clone(&self, repository_address: String) {
-        self.pvt_handle(roots::clone::run(&self.roots_dir, repository_address))
+        self.pvt_handle(roots::clone::call(&self.roots_dir, repository_address))
     }
 
     pub fn roots_list(&self) {
-        match roots::list::run(&self.roots_dir) {
+        match roots::list::call(&self.roots_dir) {
             Ok(roots) => {
                 if roots.is_empty() {
                     println!("No roots available");
@@ -49,11 +49,11 @@ impl Application {
     }
 
     pub fn roots_enter(&self, root: String) {
-        self.pvt_handle(roots::enter::run(&self.roots_dir, root))
+        self.pvt_handle(roots::enter::call(&self.roots_dir, root))
     }
 
     pub fn roots_exec(&self, root: String, command: String) {
-        self.pvt_handle(roots::exec::run(&self.roots_dir, root, command))
+        self.pvt_handle(roots::exec::call(&self.roots_dir, root, command))
     }
 
     pub fn trees_create(&self, root: String, new_branch_name: String) {

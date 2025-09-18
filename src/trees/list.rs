@@ -3,11 +3,11 @@ use std::path::PathBuf;
 
 use super::{Tree, Trees, RootsTrees};
 use crate::application::Application;
-use crate::commands::roots;
+use crate::roots;
 
 // TODO: Decide if should filter default branch
 pub fn call(application: &Application, root: &Option<String>) -> Result<RootsTrees> {
-    let roots = roots::list::run(&application.roots_dir).context("Failed to list roots")?;
+    let roots = roots::list::call(&application.roots_dir).context("Failed to list roots")?;
 
     let filtered_roots = if let Some(given_root) = root {
         roots

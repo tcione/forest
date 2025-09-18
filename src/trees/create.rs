@@ -179,7 +179,7 @@ mod tests {
     use std::collections::HashMap;
     use std::fs;
     use tempfile::TempDir;
-    use crate::commands::roots::clone;
+    use crate::roots::clone;
     use crate::application::test_application;
     use crate::utils::config::RootConfig;
 
@@ -214,7 +214,7 @@ mod tests {
         );
         let tree_path = application.trees_dir.join("test-repo--feature--new-feature");
 
-        clone::run(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
+        clone::call(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
         fs::write(&application.roots_dir.join("test-repo").join(".env"), "VAR=test").unwrap();
 
         call(&application, "test-repo", "feature/new-feature").unwrap();
@@ -238,7 +238,7 @@ mod tests {
     fn test_duplicate_branch_name() {
         let application = test_application(vec![], vec![], HashMap::new());
 
-        clone::run(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
+        clone::call(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
         call(&application, "test-repo", "feature/new-feature").unwrap();
         let err = call(&application, "test-repo", "feature/new-feature").unwrap_err();
 
