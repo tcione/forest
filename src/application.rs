@@ -29,7 +29,12 @@ impl Application {
     }
 
     pub fn roots_clone(&self, repository_address: String) {
-        self.pvt_handle(roots::clone::call(&self.roots_dir, repository_address))
+        match roots::clone::call(&self.roots_dir, repository_address) {
+            Ok(root) => {
+                println!("{} cloned into {}", root.name, root.path.display());
+            },
+            Err(err) => self.expected_error(err)
+        }
     }
 
     pub fn roots_list(&self) {

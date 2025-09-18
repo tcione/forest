@@ -1,8 +1,10 @@
 use std::path::PathBuf;
 use anyhow::{Result, Context};
 
+use super::Root;
+
 // TODO: Handle github:org/repo
-pub fn call(roots_dir: &PathBuf, repository_address: String) -> Result<()> {
+pub fn call(roots_dir: &PathBuf, repository_address: String) -> Result<Root> {
     let gitless_repo_address = repository_address.replace(".git", "");
     let repo_name = gitless_repo_address.split('/').last().context("Invalid repository URL")?;
     let repo_dir = roots_dir.join(repo_name);
@@ -17,8 +19,10 @@ pub fn call(roots_dir: &PathBuf, repository_address: String) -> Result<()> {
         anyhow::bail!("Git clone failed: {}", String::from_utf8_lossy(&output.stderr));
     }
 
-    println!("{} cloned into {}", repo_name, repo_dir.display());
-    Ok(())
+    Ok(Root {
+        name: repo_name.to_string(),
+        path: repo_dir,
+    })
 }
 
 #[cfg(test)]
@@ -34,10 +38,12 @@ mod tests {
         let cloned_path = roots_dir.path().join("test-repo");
         let git_path = cloned_path.join(".git");
 
-        call(&roots_dir.path().to_path_buf(), REPO_ADDRESS.to_string()).unwrap();
+        let result = call(&roots_dir.path().to_path_buf(), REPO_ADDRESS.to_string()).unwrap();
 
         assert!(cloned_path.exists());
         assert!(git_path.exists());
+        assert_eq!(result.name, "test-repo");
+        assert_eq!(result.path, cloned_path);
     }
 
     #[test]
