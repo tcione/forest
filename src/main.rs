@@ -42,7 +42,7 @@ enum RootsCommands {
 
     /// Enter a repository directory
     #[command(arg_required_else_help = true)]
-    Enter {
+    Path {
         /// Repository name
         root: String,
     },
@@ -113,7 +113,7 @@ fn main() {
         Commands::Roots(roots_cmd) => match roots_cmd {
             RootsCommands::Clone { repository_address } => forest.roots_clone(repository_address),
             RootsCommands::List => { forest.roots_list() },
-            RootsCommands::Enter { root } => { forest.roots_enter(root) },
+            RootsCommands::Path { root } => { forest.roots_path(root) },
             RootsCommands::Exec { root, command } => { forest.roots_exec(root, command) },
         },
         Commands::Trees(trees_cmd) => match trees_cmd {

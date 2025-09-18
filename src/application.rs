@@ -53,8 +53,13 @@ impl Application {
         }
     }
 
-    pub fn roots_enter(&self, root: String) {
-        self.pvt_handle(roots::enter::call(&self.roots_dir, root))
+    pub fn roots_path(&self, root: String) {
+        match roots::get::call(&self.roots_dir, root) {
+            Ok(root) => {
+                println!("{}", root.path.display());
+            },
+            Err(err) => self.expected_error(err)
+        }
     }
 
     pub fn roots_exec(&self, root: String, command: String) {

@@ -1,17 +1,20 @@
 use anyhow::Result;
 use std::path::PathBuf;
 
+use super::Root;
+
 // TODO: bind this to forest init (gen bash/zsh/fish functions)
-// TODO: Maybe rename "enter" to "dir"
-pub fn call(roots_dir: &PathBuf, root: String) -> Result<()> {
+pub fn call(roots_dir: &PathBuf, root: String) -> Result<Root> {
     let root_dir = roots_dir.join(&root);
 
     if !root_dir.exists() {
         anyhow::bail!("Root {} does not exist.", &root);
     }
 
-    println!("{}", root_dir.display());
-    Ok(())
+    Ok(Root {
+        name: root,
+        path: root_dir,
+    })
 }
 
 #[cfg(test)]
@@ -28,8 +31,9 @@ mod tests {
 
         create_dir_all(&root_dir).unwrap();
 
-        let result = call(&roots_dir, "test-repo".to_string());
-        assert!(result.is_ok());
+        let result = call(&roots_dir, "test-repo".to_string()).unwrap();
+        assert_eq!(result.name, "test-repo");
+        assert_eq!(result.path, root_dir);
     }
 
     #[test]
