@@ -13,7 +13,7 @@ pub fn call(application: &Application, root: &Option<String>) -> Result<RootsTre
         roots
             .into_iter()
             .filter(|current_root| &current_root.name == given_root)
-            .collect::<Vec<roots::list::Root>>()
+            .collect::<Vec<roots::Root>>()
     } else {
         roots
     };
@@ -28,7 +28,7 @@ pub fn call(application: &Application, root: &Option<String>) -> Result<RootsTre
     Ok(trees)
 }
 
-fn git_root_trees(root: &roots::list::Root) -> Result<String> {
+fn git_root_trees(root: &roots::Root) -> Result<String> {
     let output = std::process::Command::new("git")
         .arg("-C")
         .arg(&root.path)
@@ -180,7 +180,7 @@ mod test {
             .output()
             .unwrap();
 
-        let root = roots::list::Root {
+        let root = roots::Root {
             name: "test-repo".to_string(),
             path: repo_path,
         };
@@ -219,7 +219,7 @@ mod test {
             .output()
             .unwrap();
 
-        let root = roots::list::Root {
+        let root = roots::Root {
             name: "test-repo".to_string(),
             path: repo_path,
         };

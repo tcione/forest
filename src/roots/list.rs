@@ -2,11 +2,7 @@ use anyhow::Result;
 use std::fs::read_dir;
 use std::path::PathBuf;
 
-type Roots = Vec<Root>;
-pub struct Root {
-    pub name: String,
-    pub path: PathBuf,
-}
+use super::{Roots, Root};
 
 pub fn call(roots_dir: &PathBuf) -> Result<Roots> {
     let mut roots: Roots = vec![];
