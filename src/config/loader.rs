@@ -1,33 +1,14 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
 
+use super::{Config, GeneralConfig};
 use crate::utils::path::{home_dir};
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Config {
-    pub general: GeneralConfig,
-    pub roots: HashMap<String, RootConfig>,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct GeneralConfig {
-    pub base_dir: String,
-    pub copy: Vec<String>,
-    pub exec: Vec<String>,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct RootConfig {
-    pub copy: Vec<String>,
-    pub exec: Vec<String>,
-}
 
 fn default_copy() -> Vec<String> {
     vec![".env".to_string(), ".envrc".to_string()]
 }
 
-pub fn load_config(config_dir: PathBuf) -> Result<Config, Box<dyn std::error::Error>> {
+pub fn load(config_dir: PathBuf) -> Result<Config, Box<dyn std::error::Error>> {
     let config_file = config_dir.join("config.toml");
 
     if config_file.exists() {
@@ -58,12 +39,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_load_config_creates_default() {
-        let temp_dir = std::env::temp_dir().join("forest_test_load_config_creates_default");
+    fn test_load_creates_default() {
+        let temp_dir = std::env::temp_dir().join("forest_test_load_creates_default");
         let _ = std::fs::remove_dir_all(&temp_dir);
         std::fs::create_dir_all(&temp_dir).unwrap();
 
-        let result = load_config(temp_dir.clone());
+        let result = load(temp_dir.clone());
         assert!(result.is_ok());
 
         let config = result.unwrap();
@@ -83,8 +64,8 @@ mod tests {
     }
 
     #[test]
-    fn test_load_config_reads_existing() {
-        let temp_dir = std::env::temp_dir().join("sundial_test_load_config_reads_existing");
+    fn test_load_reads_existing() {
+        let temp_dir = std::env::temp_dir().join("sundial_test_load_reads_existing");
         let _ = std::fs::remove_dir_all(&temp_dir);
         std::fs::create_dir_all(&temp_dir).unwrap();
 
@@ -105,7 +86,7 @@ exec = ["exec repo2"]
 "#;
         std::fs::write(&config_file, custom_config_content).unwrap();
 
-        let result = load_config(temp_dir.clone());
+        let result = load(temp_dir.clone());
         assert!(result.is_ok());
 
         let config = result.unwrap();

@@ -181,7 +181,7 @@ mod tests {
     use tempfile::TempDir;
     use crate::roots::clone;
     use crate::application::test_application;
-    use crate::utils::config::RootConfig;
+    use crate::config::RootConfig;
 
     const TEST_REPO_URL: &str = "https://github.com/tcione/test-repo.git";
 

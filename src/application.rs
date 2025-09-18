@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use crate::trees;
 use crate::roots;
-use crate::utils::config::{Config, load_config};
+use crate::config::{Config, load_config};
 use crate::utils::path::config_dir;
 
 pub struct Application {
@@ -104,7 +104,7 @@ impl std::ops::Deref for TestApplication {
 pub fn test_application(
     copy: Vec<String>,
     exec: Vec<String>,
-    roots: std::collections::HashMap<String, crate::utils::config::RootConfig>,
+    roots: std::collections::HashMap<String, crate::config::RootConfig>,
 ) -> TestApplication {
     let base_temp_dir = tempfile::TempDir::new().unwrap();
     let base_dir = base_temp_dir.path();
@@ -112,8 +112,8 @@ pub fn test_application(
     let application = Application {
         roots_dir: base_dir.join("roots"),
         trees_dir: base_dir.join("trees"),
-        config: crate::utils::config::Config {
-            general: crate::utils::config::GeneralConfig {
+        config: crate::config::Config {
+            general: crate::config::GeneralConfig {
                 base_dir: base_dir.to_string_lossy().to_string(),
                 copy,
                 exec,

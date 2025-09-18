@@ -1,9 +1,9 @@
 mod application;
 mod trees;
 mod roots;
+mod config;
 
 mod utils {
-    pub mod config;
     pub mod path;
 }
 
