@@ -18,7 +18,7 @@ pub enum GitError {
 
 #[derive(Debug)]
 pub struct GitSuccess {
-    stdout: String,
+    pub stdout: String,
 }
 
 pub struct Git {
@@ -56,6 +56,15 @@ impl Git {
             .output()?;
 
         self.parsed_output("pull", output)
+    }
+
+    pub fn list_worktrees(&self) -> Result<GitSuccess, GitError> {
+        let output = self
+            .based_git()
+            .args(["worktree", "list", "--porcelain"])
+            .output()?;
+
+        self.parsed_output("worktree-list", output)
     }
 
     pub fn add_worktree(
@@ -233,8 +242,7 @@ mod tests {
         let clone_target = parent_dir.join("test-repo");
         let git = Git::new(&clone_target);
 
-        git.clone(TEST_REPO_ADDRESS)
-            .unwrap();
+        git.clone(TEST_REPO_ADDRESS).unwrap();
 
         let git_cloned = Git::new(&clone_target);
         let result = git_cloned.latest_default().unwrap();
@@ -283,8 +291,7 @@ mod tests {
         let clone_target = parent_dir.join("test-repo");
         let git = Git::new(&clone_target);
 
-        git.clone(TEST_REPO_ADDRESS)
-            .unwrap();
+        git.clone(TEST_REPO_ADDRESS).unwrap();
 
         let git_cloned = Git::new(&clone_target);
         let result = git_cloned.default_branch().unwrap();

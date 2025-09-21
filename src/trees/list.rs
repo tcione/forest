@@ -4,8 +4,8 @@ use std::path::PathBuf;
 use super::{Tree, Trees, RootsTrees};
 use crate::application::Application;
 use crate::roots;
+use crate::utils::git::Git;
 
-// TODO: Decide if should filter default branch
 pub fn call(application: &Application, root: &Option<String>) -> Result<RootsTrees> {
     let roots = roots::list::call(&application.roots_dir).context("Failed to list roots")?;
 
@@ -29,20 +29,10 @@ pub fn call(application: &Application, root: &Option<String>) -> Result<RootsTre
 }
 
 fn git_root_trees(root: &roots::Root) -> Result<String> {
-    let output = std::process::Command::new("git")
-        .arg("-C")
-        .arg(&root.path)
-        .args(["worktree", "list", "--porcelain"])
-        .output()
-        .context(format!("Failed to list worktrees for \"{}\"", &root.name))?;
-
-    if !output.status.success() {
-        return Ok(String::from(""));
+    match Git::new(&root.path).list_worktrees() {
+        Ok(success) => Ok(success.stdout),
+        Err(_) => Ok(String::from("")),
     }
-
-    let converted_output = String::from_utf8_lossy(&output.stdout).to_string();
-
-    Ok(converted_output)
 }
 
 fn root_trees(raw_trees: String) -> Result<Trees> {

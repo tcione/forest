@@ -2,22 +2,22 @@ use anyhow::{Context, Result};
 use regex::Regex;
 use std::path::PathBuf;
 
+use crate::utils::git::Git;
 use crate::application::Application;
 
 // TODO: root completion
-// TODO: Handle already exists by using goto
-// TODO: Handle exec in background and notify user using notify-rust
-//       For that I also need to have proper logs somewhere
+// TODO: Stream exec
+// TODO: Give option to do exec in bg
 pub fn call(application: &Application, root: &str, new_branch_name: &str) -> Result<()> {
     // TODO: check if repo folder exists
     let roots_dir = &application.roots_dir;
     let trees_dir = &application.trees_dir;
     let repo_root = roots_dir.join(root);
     let branch_tree = trees_dir.join(tree_name(root, new_branch_name));
-    let default_branch = default_branch(&repo_root)?;
 
-    pull_latest(&repo_root, &default_branch)?;
-    add_worktree(&repo_root, &new_branch_name, &branch_tree, &default_branch)?;
+    Git::new(&repo_root).latest_default()?;
+    Git::new(&repo_root).add_worktree(new_branch_name, &branch_tree)?;
+
     set_up_worktree(application, root, &repo_root, &branch_tree)?;
 
     Ok(())
@@ -29,69 +29,6 @@ fn tree_name(root: &str, new_branch_name: &str) -> String {
     let normalized = regex.replace_all(trimmed, "--");
 
     format!("{}--{}", root, &normalized)
-}
-
-// TODO: Fix so this is more reliable. What happens if there's no remote?
-fn default_branch(repo_root: &PathBuf) -> Result<String> {
-    let output = std::process::Command::new("git")
-        .arg("-C")
-        .arg(repo_root)
-        .args(["symbolic-ref", "refs/remotes/origin/HEAD"])
-        .output()
-        .context("Failed to get default branch")?;
-
-    if !output.status.success() {
-        anyhow::bail!(
-            "Failed to find default branch: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-    }
-
-    let branch_ref =
-        String::from_utf8(output.stdout).context("Failed to convert default branch to string")?;
-    let filtered_branch = branch_ref
-        .trim()
-        .strip_prefix("refs/remotes/origin/")
-        .unwrap_or("main")
-        .to_string();
-
-    Ok(filtered_branch)
-}
-
-// TODO: Fix so this is more reliable. What happens if there's no remote?
-fn pull_latest(repo_root: &PathBuf, branch: &str) -> Result<()> {
-    std::process::Command::new("git")
-        .arg("-C")
-        .arg(repo_root)
-        .args(["pull", "origin", branch])
-        .output()
-        .context("Failed to pull default branch")?;
-
-    Ok(())
-}
-
-fn add_worktree(
-    repo_root: &PathBuf,
-    new_branch_name: &str,
-    branch_tree: &PathBuf,
-    default_branch: &str,
-) -> Result<()> {
-    let output = std::process::Command::new("git")
-        .arg("-C")
-        .arg(repo_root)
-        .args(["worktree", "add"])
-        .arg("-b")
-        .arg(new_branch_name)
-        .arg(branch_tree)
-        .arg(default_branch)
-        .output()
-        .context("Failed to create new worktree")?;
-
-    if !output.status.success() {
-        anyhow::bail!("Create failed: {}", String::from_utf8_lossy(&output.stderr));
-    }
-
-    Ok(())
 }
 
 fn set_up_worktree(

@@ -3,21 +3,15 @@ use anyhow::{Result, Context};
 
 use super::Root;
 
+use crate::utils::git::Git;
+
 // TODO: Handle github:org/repo
 pub fn call(roots_dir: &PathBuf, repository_address: String) -> Result<Root> {
     let gitless_repo_address = repository_address.replace(".git", "");
     let repo_name = gitless_repo_address.split('/').last().context("Invalid repository URL")?;
     let repo_dir = roots_dir.join(repo_name);
 
-    let output = std::process::Command::new("git")
-        .args(["clone", &repository_address])
-        .arg(&repo_dir)
-        .output()
-        .context("Failed to run git command")?;
-
-    if !output.status.success() {
-        anyhow::bail!("Git clone failed: {}", String::from_utf8_lossy(&output.stderr));
-    }
+    Git::new(&repo_dir).clone(&repository_address)?;
 
     Ok(Root {
         name: repo_name.to_string(),
