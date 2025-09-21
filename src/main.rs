@@ -5,6 +5,7 @@ mod config;
 
 mod utils {
     pub mod path;
+    pub mod git;
 }
 
 use clap::{Parser, Subcommand};

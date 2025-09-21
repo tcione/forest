@@ -178,6 +178,7 @@ dependencies = [
  "regex",
  "serde",
  "tempfile",
+ "thiserror",
  "toml",
 ]
 
