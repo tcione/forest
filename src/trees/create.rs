@@ -1,6 +1,7 @@
 use anyhow::Result;
 use regex::Regex;
 use std::path::PathBuf;
+use console::style;
 
 use crate::utils::git::Git;
 use crate::utils::exec::{call as exec_call};
@@ -45,34 +46,32 @@ fn set_up_worktree(
         )
     };
 
-    copy_files(root, repo_root, branch_tree, copy);
+    copy_files(repo_root, branch_tree, copy);
     exec_commands(branch_tree, exec);
 
     Ok(())
 }
 
-fn copy_files(root: &str, repo_root: &PathBuf, branch_tree: &PathBuf, copy: &Vec<String>) {
+fn copy_files(repo_root: &PathBuf, branch_tree: &PathBuf, copy: &Vec<String>) {
     for file_name in copy {
         let source = repo_root.join(file_name);
         let destination = branch_tree.join(file_name);
 
+        let start = format!("Copying {} into {}...", file_name, branch_tree.to_string_lossy());
+        println!("{}", style(start).dim());
+
         if !source.exists() {
-            println!(
-                "Skipping: \"{}\" does not exist in \"{}\"",
-                &file_name, &root
-            );
+            println!("{}", style("...skipped (does not exist)").dim());
             continue;
         }
 
         if let Err(e) = std::fs::copy(&source, &destination) {
-            println!(
-                "Failed to copy \"{}\" to \"{}\". Error: {:?}",
-                &file_name, &root, &e
-            );
+            let end = format!("... failed ({:?})", &e);
+            eprintln!("{}", style(end).dim().red());
             continue;
         }
 
-        println!("Copied \"{}\" to \"{}\"", &file_name, &root);
+        println!("{}", style("...copied").dim());
     }
 }
 
@@ -196,7 +195,6 @@ mod tests {
         let empty_copy_list = vec![];
 
         copy_files(
-            "test-repo",
             &repo_root.path().to_path_buf(),
             &branch_tree.path().to_path_buf(),
             &empty_copy_list
@@ -220,7 +218,6 @@ mod tests {
         ];
 
         copy_files(
-            "test-repo",
             &repo_root.path().to_path_buf(),
             &branch_tree.path().to_path_buf(),
             &copy_list
