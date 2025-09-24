@@ -5,8 +5,8 @@ A CLI tool to facilitate git worktrees usage.
 ## Next
 x Refactor for types
 x Extract git logic (esp. default branch)
-    - Finish extracting git logic
-- Figure out a better exec
+    x Finish extracting git logic
+x Figure out a better exec
 - trees::exec
 - trees::enter
 - trees::clean

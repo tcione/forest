@@ -63,7 +63,7 @@ impl Application {
     }
 
     pub fn roots_exec(&self, root: String, command: String) {
-        self.pvt_handle(roots::exec::call(&self.roots_dir, root, command))
+        let _ = roots::exec::call(&self.roots_dir, root, command);
     }
 
     pub fn trees_create(&self, root: String, new_branch_name: String) {
