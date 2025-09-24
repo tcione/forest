@@ -1,13 +1,12 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use regex::Regex;
 use std::path::PathBuf;
 
 use crate::utils::git::Git;
+use crate::utils::exec::{call as exec_call};
 use crate::application::Application;
 
 // TODO: root completion
-// TODO: Stream exec
-// TODO: Give option to do exec in bg
 pub fn call(application: &Application, root: &str, new_branch_name: &str) -> Result<()> {
     // TODO: check if repo folder exists
     let roots_dir = &application.roots_dir;
@@ -47,7 +46,7 @@ fn set_up_worktree(
     };
 
     copy_files(root, repo_root, branch_tree, copy);
-    exec_commands(root, branch_tree, exec);
+    exec_commands(branch_tree, exec);
 
     Ok(())
 }
@@ -77,36 +76,9 @@ fn copy_files(root: &str, repo_root: &PathBuf, branch_tree: &PathBuf, copy: &Vec
     }
 }
 
-fn exec_commands(root: &str, branch_tree: &PathBuf, exec: &Vec<String>) {
+fn exec_commands(branch_tree: &PathBuf, exec: &Vec<String>) {
     for command in exec {
-        let output = std::process::Command::new("sh")
-            .arg("-c")
-            .arg(command)
-            .current_dir(branch_tree)
-            .output();
-
-        if let Err(e) = output {
-            println!(
-                "Failed to execute \"{}\" for \"{}\". Error: {:?}",
-                &command, &root, &e
-            );
-            continue;
-        }
-
-        let output_unwrapped = output.unwrap();
-
-        if !output_unwrapped.status.success() {
-            println!(
-                "Failed to execute \"{}\" for \"{}\". Error: {}",
-                &command,
-                &root,
-                String::from_utf8_lossy(&output_unwrapped.stderr)
-            );
-            continue;
-        }
-
-        println!("Executed \"{}\" in \"{}\"", &command, &root);
-        println!("Output:\n{}", String::from_utf8_lossy(&output_unwrapped.stdout));
+        let _ = exec_call(branch_tree, &command);
     }
 }
 
@@ -128,8 +100,7 @@ mod tests {
             .arg("-C")
             .arg(tree_path)
             .args(["branch", "--show-current"])
-            .output()
-            .context("Failed to get current branch")?;
+            .output()?;
 
         if !output.status.success() {
             anyhow::bail!(
@@ -232,7 +203,6 @@ mod tests {
         );
 
         assert_eq!(branch_tree.path().read_dir().unwrap().count(), 0);
-        // TODO: Augment checking logs once I implement logging
     }
 
     #[test]
@@ -261,7 +231,6 @@ mod tests {
         assert_eq!(fs::read_to_string(branch_tree.path().join("file1.txt")).unwrap(), "content1");
         assert_eq!(fs::read_to_string(branch_tree.path().join("file2.txt")).unwrap(), "content2");
         assert!(!branch_tree.path().join("nonexistent.txt").exists());
-        // TODO: Augment checking logs once I implement logging
     }
 
     #[test]
@@ -270,13 +239,11 @@ mod tests {
         let empty_exec_list = vec![];
 
         exec_commands(
-            "test-repo",
             &branch_tree.path().to_path_buf(),
             &empty_exec_list
         );
 
         // Function completes without panicking - that's the test
-        // TODO: Augment checking logs once I implement logging
     }
 
     #[test]
@@ -288,18 +255,15 @@ mod tests {
         ];
 
         exec_commands(
-            "test-repo",
             &branch_tree.path().to_path_buf(),
             &exec_list
         );
 
-        // Verify first command created the file
         assert!(branch_tree.path().join("output.txt").exists());
         assert_eq!(
             fs::read_to_string(branch_tree.path().join("output.txt")).unwrap().trim(),
             "test output"
         );
-        // TODO: Augment checking logs once I implement logging
     }
 
     #[test]
@@ -311,7 +275,6 @@ mod tests {
         ];
 
         exec_commands(
-            "test-repo",
             &branch_tree.path().to_path_buf(),
             &exec_list
         );
@@ -321,7 +284,6 @@ mod tests {
             fs::read_to_string(branch_tree.path().join("success.txt")).unwrap().trim(),
             "still works"
         );
-        // TODO: Augment checking logs once I implement logging
     }
 
     #[test]
