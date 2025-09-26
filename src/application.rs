@@ -83,6 +83,15 @@ impl Application {
         self.pvt_handle(trees::exec::call(&self, root, tree, command))
     }
 
+    pub fn trees_path(&self, root: String, tree: String) {
+        match trees::get::call(&self, root, tree) {
+            Ok(t) => {
+                println!("{}", t.path.display());
+            },
+            Err(err) => self.expected_error(err)
+        }
+    }
+
     fn expected_error<T: std::fmt::Display>(&self, message: T) {
         eprintln!("Error: {}", message);
         std::process::exit(1);

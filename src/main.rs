@@ -77,9 +77,9 @@ enum TreesCommands {
         root: Option<String>,
     },
 
-    /// Enter a worktree directory
+    /// Path to a worktree directory
     #[command(arg_required_else_help = true)]
-    Enter {
+    Path {
         /// The repository name (same as the name of the folder in your system)
         root: String,
         /// Branch you'll enter
@@ -121,8 +121,7 @@ fn main() {
         Commands::Trees(trees_cmd) => match trees_cmd {
             TreesCommands::Create { root, new_branch_name } => forest.trees_create(root, new_branch_name),
             TreesCommands::List { root } => { forest.trees_list(root) },
-            #[allow(unused_variables)]
-            TreesCommands::Enter { tree, root } => {},
+            TreesCommands::Path { tree, root } => forest.trees_path(root, tree),
             TreesCommands::Exec { root, tree, command } => forest.trees_exec(root, tree, command),
             #[allow(unused_variables)]
             TreesCommands::Clean { root } => {},

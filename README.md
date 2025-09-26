@@ -8,7 +8,7 @@ x Extract git logic (esp. default branch)
     x Finish extracting git logic
 x Figure out a better exec
 x trees::exec
-- trees::path
+x trees::get
 - trees::clean
 - Nice output
 
