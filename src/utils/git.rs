@@ -85,6 +85,26 @@ impl Git {
         self.parsed_output("worktree-add", output)
     }
 
+    pub fn remove_worktree(&self, target_dir: &PathBuf) -> Result<GitSuccess, GitError> {
+        let output = self
+            .based_git()
+            .args(["worktree", "remove"])
+            .arg(target_dir)
+            .output()?;
+
+        self.parsed_output("worktree-remove", output)
+    }
+
+    pub fn delete_branch(&self, branch_name: &str) -> Result<GitSuccess, GitError> {
+        let output = self
+            .based_git()
+            .args(["branch", "-D"])
+            .arg(branch_name)
+            .output()?;
+
+        self.parsed_output("branch-delete", output)
+    }
+
     fn is_local_only(&self) -> Result<bool, GitError> {
         let output = self.based_git().arg("remote").output()?;
 
@@ -375,6 +395,87 @@ mod tests {
         {
             assert_eq!(command, "test");
             assert_eq!(stderr, "error message");
+        }
+    }
+
+    #[test]
+    fn test_remove_worktree_success() {
+        let temp_dir = TempDir::new().unwrap();
+        let repo_path = setup_git_repo_with_branch(&temp_dir, "main");
+        let worktree_path = temp_dir.path().join("feature-branch");
+        let git = Git::new(&repo_path);
+
+        git.add_worktree("feature-branch", &worktree_path).unwrap();
+        assert!(worktree_path.exists());
+
+        let result = git.remove_worktree(&worktree_path);
+
+        assert!(result.is_ok());
+        assert!(!worktree_path.exists());
+    }
+
+    #[test]
+    fn test_remove_worktree_nonexistent() {
+        let temp_dir = TempDir::new().unwrap();
+        let repo_path = setup_git_repo_with_branch(&temp_dir, "main");
+        let nonexistent_path = temp_dir.path().join("nonexistent-worktree");
+        let git = Git::new(&repo_path);
+        let result = git.remove_worktree(&nonexistent_path);
+
+        assert!(result.is_err());
+        if let Err(GitError::CommandFailed { stderr, .. }) = result {
+            assert!(stderr.contains("not a working tree"));
+        }
+    }
+
+    #[test]
+    fn test_delete_branch_success() {
+        let temp_dir = TempDir::new().unwrap();
+        let repo_path = setup_git_repo_with_branch(&temp_dir, "main");
+        let git = Git::new(&repo_path);
+
+        std::process::Command::new("git")
+            .args(["checkout", "-b", "test-branch"])
+            .current_dir(&repo_path)
+            .output()
+            .expect("Failed to create branch");
+
+        std::process::Command::new("git")
+            .args(["checkout", "main"])
+            .current_dir(&repo_path)
+            .output()
+            .expect("Failed to switch to main");
+
+        let result = git.delete_branch("test-branch");
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_delete_branch_nonexistent() {
+        let temp_dir = TempDir::new().unwrap();
+        let repo_path = setup_git_repo_with_branch(&temp_dir, "main");
+        let git = Git::new(&repo_path);
+        let result = git.delete_branch("nonexistent-branch");
+
+        assert!(result.is_err());
+        if let Err(GitError::CommandFailed { stderr, .. }) = result {
+            assert!(stderr.contains("not found"));
+        }
+    }
+
+    #[test]
+    fn test_delete_branch_current() {
+        let temp_dir = TempDir::new().unwrap();
+        let repo_path = setup_git_repo_with_branch(&temp_dir, "main");
+        let git = Git::new(&repo_path);
+        let result = git.delete_branch("main");
+
+        println!("{:?}", result);
+
+        assert!(result.is_err());
+        if let Err(GitError::CommandFailed { stderr, .. }) = result {
+            assert!(stderr.contains("cannot delete branch"));
         }
     }
 }
