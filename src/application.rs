@@ -70,6 +70,10 @@ impl Application {
         self.pvt_handle(trees::create::call(&self, &root, &new_branch_name))
     }
 
+    pub fn trees_delete(&self, root: String, tree: String) {
+        self.pvt_handle(trees::delete::call(&self, root, tree))
+    }
+
     pub fn trees_list(&self, root: Option<String>) {
         match trees::list::call(&self, &root) {
             Ok(trees) => {

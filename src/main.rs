@@ -103,6 +103,15 @@ enum TreesCommands {
         #[arg(long)]
         root: Option<String>,
     },
+
+    /// Execute command in worktree directory
+    #[command(arg_required_else_help = true)]
+    Delete {
+        /// The repository name (same as the name of the folder in your system)
+        root: String,
+        /// Branch you'll enter
+        tree: String,
+    },
 }
 
 fn main() {
@@ -122,6 +131,7 @@ fn main() {
             TreesCommands::Create { root, new_branch_name } => forest.trees_create(root, new_branch_name),
             TreesCommands::List { root } => { forest.trees_list(root) },
             TreesCommands::Path { tree, root } => forest.trees_path(root, tree),
+            TreesCommands::Delete { root, tree } => forest.trees_delete(root, tree),
             TreesCommands::Exec { root, tree, command } => forest.trees_exec(root, tree, command),
             #[allow(unused_variables)]
             TreesCommands::Clean { root } => {},
