@@ -54,8 +54,7 @@ fn root_trees(raw_trees: String) -> Result<Trees> {
             let head = lines.get(1).and_then(|line| line.strip_prefix("HEAD "))?;
             let branch = lines
                 .get(2)
-                .and_then(|line| line.strip_prefix("branch "))
-                .and_then(|line| line.split("/").last())?;
+                .and_then(|line| line.strip_prefix("branch refs/heads/"))?;
             let name = path.split("/").last().unwrap_or("undefined");
 
             Some(Tree {
@@ -264,7 +263,7 @@ mod test {
             tree2.path,
             PathBuf::from("/path/to/trees/repo--feature--ui")
         );
-        assert_eq!(tree2.branch, "ui");
+        assert_eq!(tree2.branch, "feature/ui");
         assert_eq!(tree2.head, "789ghi012jkl");
     }
 }
