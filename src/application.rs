@@ -66,6 +66,10 @@ impl Application {
         let _ = roots::exec::call(&self.roots_dir, root, command);
     }
 
+    pub fn trees_clean(&self, root: Option<String>) {
+        self.pvt_handle(trees::clean::call(&self, root))
+    }
+
     pub fn trees_create(&self, root: String, new_branch_name: String) {
         self.pvt_handle(trees::create::call(&self, &root, &new_branch_name))
     }

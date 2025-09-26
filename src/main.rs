@@ -134,7 +134,7 @@ fn main() {
             TreesCommands::Delete { root, tree } => forest.trees_delete(root, tree),
             TreesCommands::Exec { root, tree, command } => forest.trees_exec(root, tree, command),
             #[allow(unused_variables)]
-            TreesCommands::Clean { root } => {},
+            TreesCommands::Clean { root } => forest.trees_clean(root),
         },
     }
 }

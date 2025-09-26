@@ -12,6 +12,7 @@ pub struct Tree {
     pub head: String,
 }
 
+pub mod clean;
 pub mod create;
 pub mod delete;
 pub mod exec;
