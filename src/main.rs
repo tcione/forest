@@ -123,8 +123,7 @@ fn main() {
             TreesCommands::List { root } => { forest.trees_list(root) },
             #[allow(unused_variables)]
             TreesCommands::Enter { tree, root } => {},
-            #[allow(unused_variables)]
-            TreesCommands::Exec { tree, command, root } => {},
+            TreesCommands::Exec { root, tree, command } => forest.trees_exec(root, tree, command),
             #[allow(unused_variables)]
             TreesCommands::Clean { root } => {},
         },

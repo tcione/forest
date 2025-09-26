@@ -79,6 +79,10 @@ impl Application {
         }
     }
 
+    pub fn trees_exec(&self, root: String, tree: String, command: String) {
+        self.pvt_handle(trees::exec::call(&self, root, tree, command))
+    }
+
     fn expected_error<T: std::fmt::Display>(&self, message: T) {
         eprintln!("Error: {}", message);
         std::process::exit(1);

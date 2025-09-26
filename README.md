@@ -7,8 +7,8 @@ x Refactor for types
 x Extract git logic (esp. default branch)
     x Finish extracting git logic
 x Figure out a better exec
-- trees::exec
-- trees::enter
+x trees::exec
+- trees::path
 - trees::clean
 - Nice output
 
