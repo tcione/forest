@@ -113,7 +113,7 @@ impl Git {
         Ok(p_output.stdout.trim().is_empty())
     }
 
-    fn default_branch(&self) -> Result<String, GitError> {
+    pub fn default_branch(&self) -> Result<String, GitError> {
         if self.is_local_only()? {
             let raw_branches = self.based_git().args(["branch", "--list"]).output()?;
             let p_branches = self.parsed_output("branch", raw_branches)?;

@@ -20,8 +20,10 @@ pub fn call(application: &Application, root: &Option<String>) -> Result<RootsTre
 
     let mut trees = RootsTrees::new();
     for root in filtered_roots {
+        let git = Git::new(&root.path);
         let git_root_trees = git_root_trees(&root)?;
-        let root_trees = root_trees(git_root_trees)?;
+        let default_branch = git.default_branch()?;
+        let root_trees = root_trees(git_root_trees, &default_branch)?;
         trees.insert(root.name.clone(), root_trees);
     }
 
@@ -35,7 +37,7 @@ fn git_root_trees(root: &roots::Root) -> Result<String> {
     }
 }
 
-fn root_trees(raw_trees: String) -> Result<Trees> {
+fn root_trees(raw_trees: String, default_branch: &str) -> Result<Trees> {
     if raw_trees.trim().is_empty() {
         return Ok(vec![]);
     }
@@ -57,6 +59,10 @@ fn root_trees(raw_trees: String) -> Result<Trees> {
                 .and_then(|line| line.strip_prefix("branch refs/heads/"))?;
             let name = path.split("/").last().unwrap_or("undefined");
 
+            if branch == default_branch {
+                return None;
+            }
+
             Some(Tree {
                 name: name.to_string(),
                 path: PathBuf::from(path),
@@ -77,56 +83,70 @@ mod test {
     use std::fs::create_dir_all;
     use tempfile::TempDir;
 
-    #[test]
-    fn test_run_without_root_filter() {
-        let application = test_application(vec![], vec![], HashMap::new());
-        let root1_path = application.roots_dir.join("repo1");
-        let root2_path = application.roots_dir.join("repo2");
-        let root2_worktree_path = application.trees_dir.join("repo2--feature");
-
-        create_dir_all(&root1_path).unwrap();
-        create_dir_all(&root2_path).unwrap();
+    fn setup_repo(path: &PathBuf) {
+        create_dir_all(path).unwrap();
 
         std::process::Command::new("git")
-            .args(["init"])
-            .current_dir(&root1_path)
+            .args(["init", "-b", "main"])
+            .current_dir(path)
+            .output()
+            .unwrap();
+        std::fs::write(path.join("README.md"), "test").unwrap();
+        std::process::Command::new("git")
+            .args(["add", "README.md"])
+            .current_dir(path)
             .output()
             .unwrap();
         std::process::Command::new("git")
-            .args(["init"])
-            .current_dir(&root2_path)
+            .args(["commit", "-m", "initial"])
+            .current_dir(path)
             .output()
             .unwrap();
+    }
 
+    fn add_worktree(root_path: &PathBuf, tree_path: &PathBuf, branch: &str) {
         std::process::Command::new("git")
             .arg("-C")
-            .arg(&root2_path)
+            .arg(root_path)
             .args([
                 "worktree",
                 "add",
                 "-b",
-                "feature",
+                branch,
             ])
-            .arg(&root2_worktree_path)
+            .arg(tree_path)
             .output()
             .unwrap();
+    }
+
+    #[test]
+    fn test_run_without_root_filter() {
+        let application = test_application(vec![], vec![], HashMap::new());
+        let root1_path = application.roots_dir.join("repo1");
+        let root1_worktree_path = application.trees_dir.join("repo1--feature");
+        let root2_path = application.roots_dir.join("repo2");
+        let root2_worktree_path = application.trees_dir.join("repo2--fix--a-bug");
+
+        setup_repo(&root1_path);
+        add_worktree(&root1_path, &root1_worktree_path, "feature");
+        setup_repo(&root2_path);
+        add_worktree(&root2_path, &root2_worktree_path, "fix/a-bug");
 
         let result = call(&application, &None).unwrap();
 
         assert_eq!(result.len(), 2);
 
         assert_eq!(result["repo1"].len(), 1);
-        assert_eq!(result["repo1"][0].name, "repo1");
-        assert!(result["repo1"][0].path.to_string_lossy().ends_with("roots/repo1"));
-        assert_eq!(result["repo1"][0].branch, "main");
+        assert_eq!(result["repo1"][0].name, "repo1--feature");
+        assert!(result["repo1"][0].path.to_string_lossy().ends_with("trees/repo1--feature"));
+        assert_eq!(result["repo1"][0].branch, "feature");
         assert!(!result["repo1"][0].head.is_empty());
 
-        assert_eq!(result["repo2"].len(), 2);
-        assert_eq!(result["repo2"][0].branch, "main");
-        assert_eq!(result["repo2"][1].name, "repo2--feature");
-        assert!(result["repo2"][1].path.to_string_lossy().ends_with("trees/repo2--feature"));
-        assert_eq!(result["repo2"][1].branch, "feature");
-        assert!(!result["repo2"][1].head.is_empty());
+        assert_eq!(result["repo2"].len(), 1);
+        assert_eq!(result["repo2"][0].name, "repo2--fix--a-bug");
+        assert!(result["repo2"][0].path.to_string_lossy().ends_with("trees/repo2--fix--a-bug"));
+        assert_eq!(result["repo2"][0].branch, "fix/a-bug");
+        assert!(!result["repo2"][0].head.is_empty());
     }
 
     #[test]
@@ -135,25 +155,15 @@ mod test {
 
         let root1_path = application.roots_dir.join("repo1");
         let root2_path = application.roots_dir.join("repo2");
-        create_dir_all(&root1_path).unwrap();
         create_dir_all(&root2_path).unwrap();
 
-        std::process::Command::new("git")
-            .args(["init"])
-            .current_dir(&root1_path)
-            .output()
-            .unwrap();
-        std::process::Command::new("git")
-            .args(["init"])
-            .current_dir(&root2_path)
-            .output()
-            .unwrap();
+        setup_repo(&root1_path);
+        setup_repo(&root2_path);
 
         let result = call(&application, &Some("repo1".to_string())).unwrap();
 
         assert_eq!(result.len(), 1);
-        assert_eq!(result["repo1"].len(), 1);
-        assert_eq!(result["repo1"][0].branch, "main");
+        assert_eq!(result["repo1"].len(), 0);
         assert!(!result.contains_key("repo2"));
     }
 
@@ -163,11 +173,7 @@ mod test {
         let repo_path = temp_dir.path().join("test-repo");
         create_dir_all(&repo_path).unwrap();
 
-        std::process::Command::new("git")
-            .args(["init"])
-            .current_dir(&repo_path)
-            .output()
-            .unwrap();
+        setup_repo(&repo_path);
 
         let root = roots::Root {
             name: "test-repo".to_string(),
@@ -186,27 +192,8 @@ mod test {
         let trees_path = temp_dir.path().join("trees");
         let worktree_path = trees_path.join("test-repo--feature");
 
-        create_dir_all(&repo_path).unwrap();
-        create_dir_all(&trees_path).unwrap();
-
-        std::process::Command::new("git")
-            .args(["init"])
-            .current_dir(&repo_path)
-            .output()
-            .unwrap();
-
-        std::process::Command::new("git")
-            .arg("-C")
-            .arg(&repo_path)
-            .args([
-                "worktree",
-                "add",
-                "-b",
-                "feature",
-            ])
-            .arg(worktree_path)
-            .output()
-            .unwrap();
+        setup_repo(&repo_path);
+        add_worktree(&repo_path, &worktree_path, "feature");
 
         let root = roots::Root {
             name: "test-repo".to_string(),
@@ -222,14 +209,14 @@ mod test {
 
     #[test]
     fn test_root_trees_empty_string() {
-        let result = root_trees(String::from("")).unwrap();
+        let result = root_trees(String::from(""), "main").unwrap();
 
         assert!(result.is_empty());
     }
 
     #[test]
     fn test_root_trees_empty_string_with_white_space() {
-        let result = root_trees(String::from("    \n  \t  ")).unwrap();
+        let result = root_trees(String::from("    \n  \t  "), "main").unwrap();
 
         assert!(result.is_empty());
     }
@@ -247,23 +234,17 @@ mod test {
         )
         .to_string();
 
-        let result = root_trees(input).unwrap();
+        let result = root_trees(input, "main").unwrap();
 
-        assert_eq!(result.len(), 2);
+        assert_eq!(result.len(), 1);
 
-        let tree1 = &result[0];
-        assert_eq!(tree1.name, "repo--main");
-        assert_eq!(tree1.path, PathBuf::from("/path/to/trees/repo--main"));
-        assert_eq!(tree1.branch, "main");
-        assert_eq!(tree1.head, "abc123def456");
-
-        let tree2 = &result[1];
-        assert_eq!(tree2.name, "repo--feature--ui");
+        let tree = &result[0];
+        assert_eq!(tree.name, "repo--feature--ui");
         assert_eq!(
-            tree2.path,
+            tree.path,
             PathBuf::from("/path/to/trees/repo--feature--ui")
         );
-        assert_eq!(tree2.branch, "feature/ui");
-        assert_eq!(tree2.head, "789ghi012jkl");
+        assert_eq!(tree.branch, "feature/ui");
+        assert_eq!(tree.head, "789ghi012jkl");
     }
 }
