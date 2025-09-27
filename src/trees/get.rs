@@ -3,13 +3,11 @@ use crate::application::Application;
 use crate::trees::list::call as list_call;
 use anyhow::{Context, Result};
 
-// TODO: bind this to forest init (gen bash/zsh/fish functions)
-// TODO: Should I return Option instead?
-pub fn call(application: &Application, root: String, tree: String) -> Result<Tree> {
-    let trees = list_call(application, &Some(root.clone())).context("Failed to list trees")?;
+pub fn call(application: &Application, root: &str, tree: &str) -> Result<Tree> {
+    let trees = list_call(application, &Some(root.to_string())).context("Failed to list trees")?;
 
     let root_trees = trees
-        .get(&root)
+        .get(root)
         .with_context(|| format!("Root '{}' not found", root))?;
 
     let found_tree = root_trees
@@ -38,8 +36,8 @@ mod tests {
 
         let result = call(
             &application,
-            "nonexistent-root".to_string(),
-            "some-tree".to_string(),
+            "nonexistent-root",
+            "some-tree",
         );
 
         assert!(result.is_err());
@@ -59,8 +57,8 @@ mod tests {
 
         let result = call(
             &application,
-            "test-repo".to_string(),
-            "nonexistent-tree".to_string(),
+            "test-repo",
+            "nonexistent-tree",
         );
 
         assert!(result.is_err());
@@ -81,8 +79,8 @@ mod tests {
 
         let result = call(
             &application,
-            "test-repo".to_string(),
-            "nonexistent-tree".to_string(),
+            "test-repo",
+            "nonexistent-tree",
         );
 
         assert!(result.is_err());
@@ -101,7 +99,7 @@ mod tests {
         clone::call(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
         create::call(&application, "test-repo", "feature").unwrap();
 
-        let result = call(&application, "test-repo".to_string(), "feature".to_string());
+        let result = call(&application, "test-repo", "feature");
 
         assert!(result.is_ok());
         let tree = result.unwrap();

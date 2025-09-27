@@ -54,7 +54,7 @@ impl Application {
     }
 
     pub fn roots_path(&self, root: String) {
-        match roots::get::call(&self.roots_dir, root) {
+        match roots::get::call(&self.roots_dir, &root) {
             Ok(root) => {
                 println!("{}", root.path.display());
             },
@@ -75,7 +75,7 @@ impl Application {
     }
 
     pub fn trees_delete(&self, root: String, tree: String) {
-        self.pvt_handle(trees::delete::call(&self, root, tree))
+        self.pvt_handle(trees::delete::call(&self, &root, &tree))
     }
 
     pub fn trees_list(&self, root: Option<String>) {
@@ -88,11 +88,11 @@ impl Application {
     }
 
     pub fn trees_exec(&self, root: String, tree: String, command: String) {
-        self.pvt_handle(trees::exec::call(&self, root, tree, command))
+        self.pvt_handle(trees::exec::call(&self, &root, &tree, command))
     }
 
     pub fn trees_path(&self, root: String, tree: String) {
-        match trees::get::call(&self, root, tree) {
+        match trees::get::call(&self, &root, &tree) {
             Ok(t) => {
                 println!("{}", t.path.display());
             },

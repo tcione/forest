@@ -63,7 +63,7 @@ pub fn call(application: &Application, root: Option<String>) -> Result<()> {
         for &i in &selections {
             let (root, tree) = &all_trees[i];
             let display = format!("[{}] {}", root, tree.branch);
-            match delete_call(application, root.clone(), tree.branch.clone()) {
+            match delete_call(application, root, &tree.branch) {
                 Ok(()) => println!(
                     "{} {}",
                     style("• Deleted: ").green().dim(),

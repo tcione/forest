@@ -7,9 +7,7 @@ use crate::utils::git::Git;
 use crate::utils::exec::{call as exec_call};
 use crate::application::Application;
 
-// TODO: root completion
 pub fn call(application: &Application, root: &str, new_branch_name: &str) -> Result<()> {
-    // TODO: check if repo folder exists
     let roots_dir = &application.roots_dir;
     let trees_dir = &application.trees_dir;
     let repo_root = roots_dir.join(root);

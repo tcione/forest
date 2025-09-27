@@ -4,18 +4,18 @@ use crate::trees::get::call as get_call;
 use crate::utils::git::Git;
 use anyhow::{Context, Result};
 
-pub fn call(application: &Application, root: String, tree: String) -> Result<()> {
-    let root_obj = root_get_call(&application.roots_dir, root.clone())
+pub fn call(application: &Application, root: &str, tree: &str) -> Result<()> {
+    let root_obj = root_get_call(&application.roots_dir, root)
         .with_context(|| format!("Failed to find root '{}'", root))?;
-    let tree = get_call(application, root.clone(), tree.clone())
+    let tree_obj = get_call(application, root, tree)
         .with_context(|| format!("Failed to find tree '{}' in root '{}'", tree, root))?;
     let git = Git::new(&root_obj.path);
 
-    git.remove_worktree(&tree.path)
-        .with_context(|| format!("Failed to remove worktree at '{}'", tree.path.display()))?;
+    git.remove_worktree(&tree_obj.path)
+        .with_context(|| format!("Failed to remove worktree at '{}'", tree_obj.path.display()))?;
 
-    git.delete_branch(&tree.branch)
-        .with_context(|| format!("Failed to delete branch '{}'", tree.branch))?;
+    git.delete_branch(&tree_obj.branch)
+        .with_context(|| format!("Failed to delete branch '{}'", tree_obj.branch))?;
 
     Ok(())
 }
@@ -42,8 +42,8 @@ mod tests {
 
         let result = call(
             &application,
-            "test-repo".to_string(),
-            "feature-branch".to_string(),
+            "test-repo",
+            "feature-branch",
         );
 
         assert!(result.is_ok());
@@ -67,8 +67,8 @@ mod tests {
 
         let result = call(
             &application,
-            "test-repo".to_string(),
-            "nonexistent-tree".to_string(),
+            "test-repo",
+            "nonexistent-tree",
         );
 
         assert!(result.is_err());
@@ -86,8 +86,8 @@ mod tests {
 
         let result = call(
             &application,
-            "nonexistent-root".to_string(),
-            "some-tree".to_string(),
+            "nonexistent-root",
+            "some-tree",
         );
 
         println!("{:?}", result);

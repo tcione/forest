@@ -21,7 +21,10 @@ pub fn call(application: &Application, root: &Option<String>) -> Result<RootsTre
     let mut trees = RootsTrees::new();
     for root in filtered_roots {
         let git = Git::new(&root.path);
-        let git_root_trees = git_root_trees(&root)?;
+        let git_root_trees = match git.list_worktrees() {
+            Ok(success) => success.stdout,
+            Err(_) => String::from(""),
+        };
         let default_branch = git.default_branch()?;
         let root_trees = root_trees(git_root_trees, &default_branch)?;
         trees.insert(root.name.clone(), root_trees);
@@ -30,12 +33,6 @@ pub fn call(application: &Application, root: &Option<String>) -> Result<RootsTre
     Ok(trees)
 }
 
-fn git_root_trees(root: &roots::Root) -> Result<String> {
-    match Git::new(&root.path).list_worktrees() {
-        Ok(success) => Ok(success.stdout),
-        Err(_) => Ok(String::from("")),
-    }
-}
 
 fn root_trees(raw_trees: String, default_branch: &str) -> Result<Trees> {
     if raw_trees.trim().is_empty() {
@@ -168,25 +165,21 @@ mod test {
     }
 
     #[test]
-    fn test_git_root_trees_no_trees() {
+    fn test_list_worktrees_no_trees() {
         let temp_dir = TempDir::new().unwrap();
         let repo_path = temp_dir.path().join("test-repo");
         create_dir_all(&repo_path).unwrap();
 
         setup_repo(&repo_path);
 
-        let root = roots::Root {
-            name: "test-repo".to_string(),
-            path: repo_path,
-        };
+        let git = Git::new(&repo_path);
+        let result = git.list_worktrees().unwrap();
 
-        let result = git_root_trees(&root).unwrap();
-
-        assert_eq!(result.matches("worktree").count(), 1);
+        assert_eq!(result.stdout.matches("worktree").count(), 1);
     }
 
     #[test]
-    fn test_git_root_trees_one_tree() {
+    fn test_list_worktrees_one_tree() {
         let temp_dir = TempDir::new().unwrap();
         let repo_path = temp_dir.path().join("test-repo");
         let trees_path = temp_dir.path().join("trees");
@@ -195,16 +188,12 @@ mod test {
         setup_repo(&repo_path);
         add_worktree(&repo_path, &worktree_path, "feature");
 
-        let root = roots::Root {
-            name: "test-repo".to_string(),
-            path: repo_path,
-        };
+        let git = Git::new(&repo_path);
+        let result = git.list_worktrees().unwrap();
+        println!("{:?}", result.stdout);
 
-        let result = git_root_trees(&root).unwrap();
-        println!("{:?}", result);
-
-        assert_eq!(result.matches("worktree").count(), 2);
-        assert_eq!(result.matches("test-repo--feature").count(), 1);
+        assert_eq!(result.stdout.matches("worktree").count(), 2);
+        assert_eq!(result.stdout.matches("test-repo--feature").count(), 1);
     }
 
     #[test]

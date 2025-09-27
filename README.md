@@ -2,15 +2,16 @@
 
 A CLI tool to facilitate git worktrees usage.
 
-## Next
-x Refactor for types
-x Extract git logic (esp. default branch)
-    x Finish extracting git logic
-x Figure out a better exec
-x trees::exec
-x trees::get
-- trees::clean
+## Launch
 - Nice output
+- "goto" instructions
+- Project consistency and standards (clone, refs, general consistency)
+- Distribution (mac)
+- Distribution (nix)
+
+## Future
+- Interactive goto
+- Init repo (no remote)
 
 ## General
 

@@ -4,7 +4,7 @@ use crate::application::Application;
 use crate::trees::get::call as get_call;
 use crate::utils::exec::call as exec_call;
 
-pub fn call(application: &Application, root: String, tree: String, command: String) -> Result<()> {
+pub fn call(application: &Application, root: &str, tree: &str, command: String) -> Result<()> {
     let tree = get_call(application, root, tree)?;
 
     exec_call(&tree.path, &command).with_context(|| {
@@ -37,8 +37,8 @@ mod tests {
         let tree_dir = application.trees_dir.join("test-repo--feature");
         let result = call(
             &application,
-            "test-repo".to_string(),
-            "feature".to_string(),
+            "test-repo",
+            "feature",
             "echo testing > testfile.txt".to_string(),
         );
 
