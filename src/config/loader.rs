@@ -49,9 +49,6 @@ mod tests {
 
         let config = result.unwrap();
 
-        println!("{:?}", config);
-
-        // Default values
         let home_dir_string = home_dir().unwrap().to_string_lossy().to_string();
         assert_eq!(config.general.base_dir, format!("{}/Projects", home_dir_string));
         assert_eq!(config.general.copy, vec![".env".to_string(), ".envrc".to_string()]);

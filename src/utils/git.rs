@@ -471,8 +471,6 @@ mod tests {
         let git = Git::new(&repo_path);
         let result = git.delete_branch("main");
 
-        println!("{:?}", result);
-
         assert!(result.is_err());
         if let Err(GitError::CommandFailed { stderr, .. }) = result {
             assert!(stderr.contains("cannot delete branch"));

@@ -190,7 +190,6 @@ mod test {
 
         let git = Git::new(&repo_path);
         let result = git.list_worktrees().unwrap();
-        println!("{:?}", result.stdout);
 
         assert_eq!(result.stdout.matches("worktree").count(), 2);
         assert_eq!(result.stdout.matches("test-repo--feature").count(), 1);

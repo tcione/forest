@@ -4,6 +4,7 @@ use crate::trees;
 use crate::roots;
 use crate::config::{Config, load_config};
 use crate::utils::path::config_dir;
+use crate::utils::cli_ui;
 
 pub struct Application {
     pub roots_dir: PathBuf,
@@ -24,14 +25,15 @@ impl Application {
     }
 
     pub fn setup(&self) {
-        self.pvt_handle(std::fs::create_dir_all(&self.roots_dir));
-        self.pvt_handle(std::fs::create_dir_all(&self.trees_dir));
+        self.handle(std::fs::create_dir_all(&self.roots_dir));
+        self.handle(std::fs::create_dir_all(&self.trees_dir));
     }
 
     pub fn roots_clone(&self, repository_address: String) {
         match roots::clone::call(&self.roots_dir, repository_address) {
             Ok(root) => {
-                println!("{} cloned into {}", root.name, root.path.display());
+                let msg = format!("{} cloned into {}", root.name, root.path.display());
+                println!("{}", cli_ui::success(&msg));
             },
             Err(err) => self.expected_error(err)
         }
@@ -41,12 +43,12 @@ impl Application {
         match roots::list::call(&self.roots_dir) {
             Ok(roots) => {
                 if roots.is_empty() {
-                    println!("No roots available");
+                    cli_ui::warn("No roots available");
                     return;
                 }
 
                 for root in roots {
-                    println!("{} -> {}", &root.name, &root.path.display());
+                    println!("{}", cli_ui::root_with_path(&root));
                 }
             },
             Err(_) => self.expected_error("Roots directory does not exist!")
@@ -63,32 +65,36 @@ impl Application {
     }
 
     pub fn roots_exec(&self, root: String, command: String) {
-        let _ = roots::exec::call(&self.roots_dir, root, command);
+        self.handle(roots::exec::call(&self.roots_dir, root, command))
     }
 
     pub fn trees_clean(&self, root: Option<String>) {
-        self.pvt_handle(trees::clean::call(&self, root))
+        self.handle(trees::clean::call(&self, root))
     }
 
     pub fn trees_create(&self, root: String, new_branch_name: String) {
-        self.pvt_handle(trees::create::call(&self, &root, &new_branch_name))
+        self.handle(trees::create::call(&self, &root, &new_branch_name))
     }
 
     pub fn trees_delete(&self, root: String, tree: String) {
-        self.pvt_handle(trees::delete::call(&self, &root, &tree))
+        self.handle(trees::delete::call(&self, &root, &tree))
     }
 
     pub fn trees_list(&self, root: Option<String>) {
         match trees::list::call(&self, &root) {
-            Ok(trees) => {
-                println!("{:?}", trees);
+            Ok(roots_trees) => {
+                roots_trees.iter().for_each(|(root, trees)| {
+                    for tree in trees {
+                        println!("{}", cli_ui::tree_with_path(&root, &tree));
+                    }
+                });
             },
             Err(err) => self.expected_error(err)
         }
     }
 
     pub fn trees_exec(&self, root: String, tree: String, command: String) {
-        self.pvt_handle(trees::exec::call(&self, &root, &tree, command))
+        self.handle(trees::exec::call(&self, &root, &tree, command))
     }
 
     pub fn trees_path(&self, root: String, tree: String) {
@@ -101,15 +107,17 @@ impl Application {
     }
 
     fn expected_error<T: std::fmt::Display>(&self, message: T) {
-        eprintln!("Error: {}", message);
+        let msg = format!("Error: {}", message);
+        eprintln!("{}", cli_ui::error(&msg));
         std::process::exit(1);
     }
 
-    fn pvt_handle<T, E: std::fmt::Debug>(&self, rs: Result<T, E>) -> T {
+    fn handle<T, E: std::fmt::Debug>(&self, rs: Result<T, E>) -> T {
         match rs {
             Ok(r) => r,
             Err(e) => {
-                eprintln!("{:?}", e);
+                let err = format!("{:?}", e);
+                eprintln!("{}", cli_ui::error(&err));
                 std::process::exit(1);
             }
         }

@@ -90,8 +90,6 @@ mod tests {
             "some-tree",
         );
 
-        println!("{:?}", result);
-
         assert!(result.is_err());
         assert!(
             result
