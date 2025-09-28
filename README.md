@@ -5,7 +5,7 @@ A CLI tool to facilitate git worktrees usage.
 ## Launch
 - Nice output
 - "goto" instructions
-- Project consistency and standards (clone, refs, general consistency)
+x Project consistency and standards (clone, refs, general consistency)
 - Distribution (mac)
 - Distribution (nix)
 

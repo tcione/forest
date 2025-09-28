@@ -6,6 +6,7 @@ use super::Tree;
 use crate::application::Application;
 use crate::trees::delete::call as delete_call;
 use crate::trees::list::call as list_call;
+use crate::utils::cli_ui;
 
 pub fn call(application: &Application, root: Option<String>) -> Result<()> {
     let trees_map = list_call(application, &root)?;
@@ -20,16 +21,16 @@ pub fn call(application: &Application, root: Option<String>) -> Result<()> {
         .collect();
 
     if all_trees.is_empty() {
-        print_end_warning("No trees found to clean");
+        println!("{}", cli_ui::warn("No trees found to clean"));
         return Ok(());
     }
 
     let display_items: Vec<String> = all_trees
         .iter()
-        .map(|(root, tree)| format!("[{}] {}", root, tree.branch))
+        .map(|(root, tree)| cli_ui::tree(root, &tree))
         .collect();
 
-    let select_prompt = format_prompt("Select trees to delete (j/k to navigate, space to toggle");
+    let select_prompt = cli_ui::prompt("Select trees to delete (j/k to navigate, space to toggle");
 
     let selections = MultiSelect::new()
         .with_prompt(select_prompt)
@@ -37,32 +38,31 @@ pub fn call(application: &Application, root: Option<String>) -> Result<()> {
         .interact()?;
 
     if selections.is_empty() {
-        print_end_warning("No trees selected");
+        println!("{}", cli_ui::warn("No trees selected"));
         return Ok(());
     }
 
-    println!("{}", format_prompt("⚠ Trees selected for deletion:"));
+    println!("{}", cli_ui::prompt("⚠ Trees selected for deletion:"));
     for &i in &selections {
         let (root, tree) = &all_trees[i];
         let item = format!(
-            "-> [{}] {}",
-            style(root),
-            style(tree.branch.clone()),
+            "-> {}",
+            cli_ui::tree(root, &tree),
         );
         println!("{}", style(item).dim());
     }
 
-    println!("\n{}", style("This action cannot be undone!").red());
+    println!("{}", cli_ui::critical("This action cannot be undone!"));
 
     if Confirm::new()
-        .with_prompt(format_prompt("Delete these trees?"))
+        .with_prompt(cli_ui::prompt("Delete these trees?"))
         .default(false)
         .interact()?
     {
         println!("");
         for &i in &selections {
             let (root, tree) = &all_trees[i];
-            let display = format!("[{}] {}", root, tree.branch);
+            let display = cli_ui::tree(root, &tree);
             match delete_call(application, root, &tree.branch) {
                 Ok(()) => println!(
                     "{} {}",
@@ -78,20 +78,12 @@ pub fn call(application: &Application, root: Option<String>) -> Result<()> {
                 ),
             }
         }
-        println!("\n{}", style("Worktrees deleted").on_green().black().bold());
+        println!("{}", cli_ui::success("Worktrees deleted"));
     } else {
-        print_end_warning("Clean cancelled");
+        println!("{}", cli_ui::warn("Clean cancelled"));
     }
 
     println!("");
 
     Ok(())
-}
-
-fn print_end_warning(message: &str) {
-    println!("\n{}", style(message).on_yellow().black().bold());
-}
-
-fn format_prompt(message: &str) -> String {
-    format!("\n{}", style(message).cyan())
 }

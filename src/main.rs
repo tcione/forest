@@ -7,6 +7,7 @@ mod utils {
     pub mod path;
     pub mod git;
     pub mod exec;
+    pub mod cli_ui;
 }
 
 use clap::{Parser, Subcommand};
