@@ -3,16 +3,24 @@ use console::style;
 use crate::trees::Tree;
 use crate::roots::Root;
 
+pub fn context(msg: &str) -> String {
+    format!("{}", style(msg).dim())
+}
+
+pub fn context_warn(msg: &str) -> String {
+    format!("{}", style(msg).dim().yellow())
+}
+
 pub fn prompt(msg: &str) -> String {
-    format!("\n{}", style(msg).cyan())
+    format!("{}", style(msg).cyan())
 }
 
 pub fn warn(msg: &str) -> String {
-    format!("\n{}", style(msg).on_yellow().black().bold())
+    format!("{}", style(msg).on_yellow().black().bold())
 }
 
 pub fn error(msg: &str) -> String {
-    format!("\n{}", style(msg).on_red().black().bold())
+    format!("{}", style(msg).on_red().black().bold())
 }
 
 pub fn success(msg: &str) -> String {
@@ -20,7 +28,7 @@ pub fn success(msg: &str) -> String {
 }
 
 pub fn critical(msg: &str) -> String {
-    format!("\n{}", style(msg).red())
+    format!("{}", style(msg).red())
 }
 
 pub fn tree(root: &str, tree: &Tree) -> String {

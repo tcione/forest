@@ -4,6 +4,8 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use thiserror::Error;
 
+use crate::utils::cli_ui;
+
 #[derive(Error, Debug)]
 pub enum ExecError {
     #[error("Command '{command}' failed with exit code {code}")]
@@ -18,7 +20,7 @@ pub enum ExecError {
 // TODO: Background execution
 pub fn call(base_dir: &PathBuf, command: &str) -> Result<(), ExecError> {
     let start = format!(">> command: {}", command);
-    println!("{}", style(start).dim());
+    println!("{}", cli_ui::context(&start));
 
     let status = Command::new("sh")
         .arg("-c")
@@ -30,14 +32,14 @@ pub fn call(base_dir: &PathBuf, command: &str) -> Result<(), ExecError> {
         .status()?;
 
     if !status.success() {
-        eprintln!("{}", style("<< command error").dim().red());
+        eprintln!("{}", cli_ui::critical("<< command error"));
         return Err(ExecError::CommandFailed {
             command: command.to_string(),
             code: status.code().unwrap_or(-1),
         })
     }
 
-    println!("{}", style("<< command done").dim());
+    println!("{}", cli_ui::context("<< command done"));
 
     Ok(())
 }

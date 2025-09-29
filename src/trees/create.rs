@@ -1,10 +1,10 @@
 use anyhow::Result;
 use regex::Regex;
 use std::path::PathBuf;
-use console::style;
 
-use crate::utils::git::Git;
+use crate::utils::cli_ui;
 use crate::utils::exec::{call as exec_call};
+use crate::utils::git::Git;
 use crate::application::Application;
 
 pub fn call(application: &Application, root: &str, new_branch_name: &str) -> Result<()> {
@@ -55,21 +55,21 @@ fn copy_files(repo_root: &PathBuf, branch_tree: &PathBuf, copy: &Vec<String>) {
         let source = repo_root.join(file_name);
         let destination = branch_tree.join(file_name);
 
-        let start = format!("Copying {} into {}...", file_name, branch_tree.to_string_lossy());
-        println!("{}", style(start).dim());
+        let start = format!("Copying '{}' into '{}'...", file_name, branch_tree.to_string_lossy());
+        println!("{}", cli_ui::context(&start));
 
         if !source.exists() {
-            println!("{}", style("...skipped (does not exist)").dim());
+            println!("{}", cli_ui::context_warn("...skipped (does not exist)"));
             continue;
         }
 
         if let Err(e) = std::fs::copy(&source, &destination) {
             let end = format!("... failed ({:?})", &e);
-            eprintln!("{}", style(end).dim().red());
+            eprintln!("{}", cli_ui::critical(&end));
             continue;
         }
 
-        println!("{}", style("...copied").dim());
+        println!("{}", cli_ui::context("...copied"));
     }
 }
 

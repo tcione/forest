@@ -21,7 +21,7 @@ pub fn call(application: &Application, root: Option<String>) -> Result<()> {
         .collect();
 
     if all_trees.is_empty() {
-        println!("{}", cli_ui::warn("No trees found to clean"));
+        println!("\n{}", cli_ui::warn("No trees found to clean"));
         return Ok(());
     }
 
@@ -30,7 +30,7 @@ pub fn call(application: &Application, root: Option<String>) -> Result<()> {
         .map(|(root, tree)| cli_ui::tree(root, &tree))
         .collect();
 
-    let select_prompt = cli_ui::prompt("Select trees to delete (j/k to navigate, space to toggle");
+    let select_prompt = cli_ui::prompt("\nSelect trees to delete (j/k to navigate, space to toggle");
 
     let selections = MultiSelect::new()
         .with_prompt(select_prompt)
@@ -38,11 +38,11 @@ pub fn call(application: &Application, root: Option<String>) -> Result<()> {
         .interact()?;
 
     if selections.is_empty() {
-        println!("{}", cli_ui::warn("No trees selected"));
+        println!("\n{}", cli_ui::warn("No trees selected"));
         return Ok(());
     }
 
-    println!("{}", cli_ui::prompt("⚠ Trees selected for deletion:"));
+    println!("\n{}", cli_ui::prompt("⚠ Trees selected for deletion:"));
     for &i in &selections {
         let (root, tree) = &all_trees[i];
         let item = format!(
@@ -52,10 +52,10 @@ pub fn call(application: &Application, root: Option<String>) -> Result<()> {
         println!("{}", style(item).dim());
     }
 
-    println!("{}", cli_ui::critical("This action cannot be undone!"));
+    println!("\n{}", cli_ui::critical("This action cannot be undone!"));
 
     if Confirm::new()
-        .with_prompt(cli_ui::prompt("Delete these trees?"))
+        .with_prompt(cli_ui::prompt("\nDelete these trees?"))
         .default(false)
         .interact()?
     {
@@ -78,9 +78,9 @@ pub fn call(application: &Application, root: Option<String>) -> Result<()> {
                 ),
             }
         }
-        println!("{}", cli_ui::success("Worktrees deleted"));
+        println!("\n{}", cli_ui::success("Worktrees deleted"));
     } else {
-        println!("{}", cli_ui::warn("Clean cancelled"));
+        println!("\n{}", cli_ui::warn("Clean cancelled"));
     }
 
     println!("");

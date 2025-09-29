@@ -33,7 +33,7 @@ impl Application {
         match roots::clone::call(&self.roots_dir, repository_address) {
             Ok(root) => {
                 let msg = format!("{} cloned into {}", root.name, root.path.display());
-                println!("{}", cli_ui::success(&msg));
+                println!("\n{}", cli_ui::success(&msg));
             },
             Err(err) => self.expected_error(err)
         }
@@ -43,7 +43,7 @@ impl Application {
         match roots::list::call(&self.roots_dir) {
             Ok(roots) => {
                 if roots.is_empty() {
-                    cli_ui::warn("No roots available");
+                    println!("\n{}", cli_ui::warn("No roots available"));
                     return;
                 }
 
@@ -108,7 +108,7 @@ impl Application {
 
     fn expected_error<T: std::fmt::Display>(&self, message: T) {
         let msg = format!("Error: {}", message);
-        eprintln!("{}", cli_ui::error(&msg));
+        eprintln!("\n{}", cli_ui::error(&msg));
         std::process::exit(1);
     }
 
@@ -117,7 +117,7 @@ impl Application {
             Ok(r) => r,
             Err(e) => {
                 let err = format!("{:?}", e);
-                eprintln!("{}", cli_ui::error(&err));
+                eprintln!("\n{}", cli_ui::critical(&err));
                 std::process::exit(1);
             }
         }
