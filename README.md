@@ -4,10 +4,17 @@ A CLI tool to facilitate git worktrees usage.
 
 ## Launch
 x Nice output
-- "goto" instructions
 x Project consistency and standards (clone, refs, general consistency)
+- Generate completions
+- "goto" instructions
 - Distribution (mac)
+  - tap
+  - completions
+  - fogo script
 - Distribution (nix)
+  - tap
+  - completions
+  - fogo script
 
 ## Future
 - Interactive goto
