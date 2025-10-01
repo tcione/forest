@@ -83,11 +83,14 @@ mod test {
     fn setup_repo(path: &PathBuf) {
         create_dir_all(path).unwrap();
 
-        std::process::Command::new("git")
+        let r = std::process::Command::new("git")
             .args(["init", "-b", "main"])
             .current_dir(path)
             .output()
             .unwrap();
+
+        println!("{:?}", r);
+
         std::fs::write(path.join("README.md"), "test").unwrap();
         std::process::Command::new("git")
             .args(["add", "README.md"])
