@@ -102,6 +102,14 @@ mod test {
             .current_dir(path)
             .output()
             .unwrap();
+
+        let r2 = std::process::Command::new("git")
+            .arg("branch")
+            .current_dir(path)
+            .output()
+            .unwrap();
+
+        println!({:?}", r2);
     }
 
     fn add_worktree(root_path: &PathBuf, tree_path: &PathBuf, branch: &str) {
