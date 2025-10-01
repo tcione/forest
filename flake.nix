@@ -27,7 +27,7 @@
           meta = with pkgs.lib; {
             description = "A tool that manages worktrees for you";
             homepage = "https://github.com/tcione/forest";
-            license = licenses.mit;
+            license = with licenses; [ mit asl20 ];
             maintainers = [ "@tcione" ];
           };
         };

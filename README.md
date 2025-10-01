@@ -81,6 +81,17 @@ exec = [
 - Allows user to select the ones they want to delete
 - Deletes after asking confirmation
 
+## License
+
+Forest is dual-licensed under either:
+
+* [MIT License](LICENSE-MIT)
+* [Apache License, Version 2.0](LICENSE-APACHE)
+
+at your option.
+
+This means you can choose either license when using this code. See the license files for details.
+
 ## Rust standards
 
 - Swallowing errors using `let _ = ...` must be avoided. Only use with justification
