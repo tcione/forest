@@ -1,5 +1,4 @@
 use anyhow::Result;
-use console::style;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use thiserror::Error;
