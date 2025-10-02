@@ -88,6 +88,16 @@ mod test {
             .current_dir(path)
             .output()
             .unwrap();
+        std::process::Command::new("git")
+            .args(["config", "user.name", "Test User"])
+            .current_dir(path)
+            .output()
+            .expect("Failed to configure git user");
+        std::process::Command::new("git")
+            .args(["config", "user.email", "test@example.com"])
+            .current_dir(path)
+            .output()
+            .expect("Failed to configure git email");
         std::fs::write(path.join("README.md"), "test").unwrap();
         std::process::Command::new("git")
             .args(["add", "README.md"])

@@ -198,7 +198,6 @@ mod tests {
             .output()
             .expect("Failed to configure git email");
 
-        // Create initial commit
         fs::write(repo_path.join("README.md"), "# Test Repo").expect("Failed to create README");
         std::process::Command::new("git")
             .args(["add", "README.md"])
