@@ -47,32 +47,63 @@ A CLI tool to make working with [git worktrees](https://git-scm.com/docs/git-wor
 
 Or with Home Manager:
 ```nix
-# home.nix
-{ config, pkgs, ... }:
+# flake.nix
 {
-  imports = [ forest.homeManagerModules.default ];
+  inputs = {
+    # ...
+    forest.url = "path:/home/tortoise/Projects/src/forest";
+  };
 
-  programs.forest = {
-    enable = true;
-    settings = {
-      general = {
-        baseDir = "${config.home.homeDirectory}/Projects";
-        copy = [ ".env" ".envrc" ];
-        exec = [];
-      };
+  outputs = { self, nixpkgs, home-manager, darwin, ...}@inputs:
+  let
+    system = "x86_64-linux";
+  in {
+    # ...
+    nixosConfigurations.{user} = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        {
+          nixpkgs.overlays = [
+            (
+              final: prev: {
+               forest = inputs.forest.packages.${system}.default;
+             }
+            )
+          ];
+        }
+        # ...
+        home-manager.nixosModules.home-manager {
+          # ...
+          home-manager.users.{user}.imports = [
+            # ...
+            inputs.forest.homeManagerModules.${system}.default
+            ./home.nix
+          ];
+        }
+      ];
     };
   };
 }
 ```
 
+```nix
+# in home.nix
+programs.forest = {
+  enable = true;
+  settings = {
+    general = {
+      baseDir = "${config.home.homeDirectory}/Projects";
+      copy = [".env" ".envrc"];
+      exec = [];
+    };
+  };
+};
+```
+
 ### Homebrew
 
 ```bash
-# Add the tap
-brew tap tcione/forest
-
-# Install forest
-brew install forest
+brew install tcione/tap/forest
 ```
 
 ### Other
@@ -89,8 +120,8 @@ brew install forest
 ## What does future look like? (roadmap)
 0.10.0 - Current version
 
-- [ ] Proper documentation
-- [ ] Test homebrew setup
+- [x] Proper documentation
+- [x] Test homebrew setup
 - [ ] 0.11.0: "fogo" bash setup (command that takes user to tree or root)
 - [ ] 0.12.0: Fuzzy selection in "path", "exec" and "create"
 - [ ] 0.13.0: CLI completions
