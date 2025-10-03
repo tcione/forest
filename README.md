@@ -118,7 +118,7 @@ brew install tcione/tap/forest
 3. Use git normally inside `tree` and `root` (just avoid leaving the default branch in `root`)
 
 ## What does future look like? (roadmap)
-0.10.0 - Current version
+0.10.1 - Current version
 
 - [x] Proper documentation
 - [x] Test homebrew setup
@@ -164,7 +164,7 @@ exec = [
 
 ```
 $ forest -h
-Convention-over-configuration CLI tool to manager git worktrees
+A CLI tool to make working with easier by establishing a few conventions and abstracting away some git commands.
 
 Usage: forest <COMMAND>
 

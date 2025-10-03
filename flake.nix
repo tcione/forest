@@ -1,5 +1,5 @@
 {
-  description = "A tool that manages worktrees for you";
+  description = "A CLI tool to make working with easier by establishing a few conventions and abstracting away some git commands";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -13,7 +13,7 @@
 
         forest = pkgs.rustPlatform.buildRustPackage {
           pname = "forest";
-          version = "0.10.0";
+          version = "0.10.1";
 
           src = ./.;
 
@@ -25,7 +25,7 @@
           doCheck = false;
 
           meta = with pkgs.lib; {
-            description = "A tool that manages worktrees for you";
+            description = "A CLI tool to make working with easier by establishing a few conventions and abstracting away some git commands";
             homepage = "https://github.com/tcione/forest";
             license = with licenses; [ mit asl20 ];
             maintainers = [ "@tcione" ];

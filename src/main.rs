@@ -14,7 +14,8 @@ use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
 #[command(name = "forest")]
-#[command(about = "Convention-over-configuration CLI tool to manager git worktrees", long_about = None)]
+#[command(about = "A CLI tool to make working with easier by establishing a few conventions and abstracting away some git commands.", long_about = None)]
+#[command(version)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
