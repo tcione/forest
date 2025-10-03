@@ -40,20 +40,21 @@ enum RootsCommands {
         repository_address: String,
     },
 
-    /// List all repositories
+    /// List all roots
     List,
 
-    /// Enter a repository directory
+    /// Show full path to a specific root
     #[command(arg_required_else_help = true)]
     Path {
-        /// Repository name
+        /// Root name (same as repo)
         root: String,
     },
 
-    /// Execute command in repository directory
+    /// Execute a command against a root.
+    /// Similar to entering root dir and inputting <command>
     #[command(arg_required_else_help = true)]
     Exec {
-        /// Repository name
+        /// Root name (same as repo)
         root: String,
         /// Command to execute
         command: String,
@@ -65,9 +66,9 @@ enum TreesCommands {
     /// Create a worktree for the repo inside trees/
     #[command(arg_required_else_help = true)]
     Create {
-        /// The repository name (same as the name of the folder in your system)
+        /// Root name (same as repo)
         root: String,
-        /// Name for your new branch. Follow normal git conventions
+        /// Name for your new branch. Follow your git conventions
         new_branch_name: String,
     },
 
@@ -81,18 +82,19 @@ enum TreesCommands {
     /// Path to a worktree directory
     #[command(arg_required_else_help = true)]
     Path {
-        /// The repository name (same as the name of the folder in your system)
+        /// Filter by root (repository name)
         root: String,
-        /// Branch you'll enter
+        /// Tree name (same as branch name)
         tree: String,
     },
 
-    /// Execute command in worktree directory
+    /// Execute a command against a tree.
+    /// Similar to entering tree dir and inputting <command>
     #[command(arg_required_else_help = true)]
     Exec {
-        /// The repository name (same as the name of the folder in your system)
+        /// Filter by root (repository name)
         root: String,
-        /// Branch you'll enter
+        /// Tree name (same as branch name)
         tree: String,
         /// Command to execute
         command: String,
@@ -100,7 +102,7 @@ enum TreesCommands {
 
     /// Clean up worktrees interactively
     Clean {
-        /// Filter by root
+        /// Filter by root (repository name)
         #[arg(long)]
         root: Option<String>,
     },
@@ -108,9 +110,9 @@ enum TreesCommands {
     /// Execute command in worktree directory
     #[command(arg_required_else_help = true)]
     Delete {
-        /// The repository name (same as the name of the folder in your system)
+        /// Filter by root (repository name)
         root: String,
-        /// Branch you'll enter
+        /// Tree name (same as branch name)
         tree: String,
     },
 }

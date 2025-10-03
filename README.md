@@ -17,6 +17,7 @@ A CLI tool to make working with [git worktrees](https://git-scm.com/docs/git-wor
 - All trees exist under the `trees` folder, regardless of `root`
 - `tree` folders are named after the following pattern: `{root}--{branch-name}`
 - When creating the `tree` folder name, `root` and `branch-name` get normalized by replacing any character different from `[A-Za-z0-9\-_]` by `--`
+- `forest tree create <root> <branch>` will always branch out from the latest version of `root`'s default branch. Meaning whenever `create` is invoked, `git pull origin <default-branch` is performed in the `root` directory
 
 ## Nice! How can I install this?
 
@@ -77,7 +78,13 @@ brew install forest
 ### Other
 
 1. Download the latest binary for your system under [releases](https://github.com/tcione/forest/releases)
-2. Place somewhere visibile to your `PATH`
+2. Place somewhere visible in your `PATH`
+
+## Now how can I use it?
+
+1. Clone a repo: `forest roots clone <repo address>`
+2. Create a tree: `forest trees create <root/repo-name> <branch-name>`
+3. Use git normally inside `tree` and `root` (just avoid leaving the default branch in `root`)
 
 ## What does future look like? (roadmap)
 0.10.0 - Current version
@@ -87,7 +94,7 @@ brew install forest
 - [ ] 0.11.0: "fogo" bash setup (command that takes user to tree or root)
 - [ ] 0.12.0: Fuzzy selection in "path", "exec" and "create"
 - [ ] 0.13.0: CLI completions
-- [ ] 0.14.0: Allow use to create local repos via `forest root`
+- [ ] 0.14.0: Allow user to create local repos via `forest roots`
 - [ ] 0.15.0: Allow for local repo configs using `forest.toml` at the `root`'s folder
 - [ ] 0.15.1: Prepare repo for 1.0.0 by tidying up codebase, ensure consistency and double-checking standards. Check if there's anything else to take care before 1.0.0
 ...
@@ -149,9 +156,9 @@ Usage: forest roots <COMMAND>
 
 Commands:
   clone  Clone git repository inside roots/
-  list   List all repositories
-  path   Enter a repository directory
-  exec   Execute command in repository directory
+  list   List all roots
+  path   Show full path to a specific root
+  exec   Execute a command against a root. Similar to entering root dir and inputting <command>
   help   Print this message or the help of the given subcommand(s)
 
 Options:
@@ -170,7 +177,7 @@ Commands:
   create  Create a worktree for the repo inside trees/
   list    List all worktrees
   path    Path to a worktree directory
-  exec    Execute command in worktree directory
+  exec    Execute a command against a tree. Similar to entering tree dir and inputting <command>
   clean   Clean up worktrees interactively
   delete  Execute command in worktree directory
   help    Print this message or the help of the given subcommand(s)
