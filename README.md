@@ -1,53 +1,119 @@
 # forest
 
-A CLI tool to facilitate git worktrees usage.
+The CLI tool endorsed by your local Forest Preservation Club™ for managing [(git) worktrees](https://git-scm.com/docs/git-worktree).
 
-## Launch
-x Nice output
-x Project consistency and standards (clone, refs, general consistency)
-- Generate completions
-- "goto" instructions
-- Distribution (mac)
-  - tap
-  - completions
-  - fogo script
-- Distribution (nix)
-  - tap
-  - completions
-  - fogo script
+**:warning: This is still beta software. Core functionality likely won't change, but the feature set is not yet complete and might require fundamental changes depending on what I discover. Please check the "roadmap" section to see what's planned for the future.**
 
-## Future
-- Interactive goto
-- Init repo (no remote)
+## But really, what is this?
 
-## General
+A CLI tool to make working with [git worktrees](https://git-scm.com/docs/git-worktree) easier by establishing a few conventions and abstracting away some git commands.
 
-- Easy approach, following convention over configuration
-- Nice and cute interface (offers more obvious aliases for commands)
+## Then, what are the conventions?
 
-## Conventions
-- Repositories exist in `roots/`
-- Worktrees exist in `trees/`
-- Worktree folders follow this pattern "{repository-name}--{branch-name}"
-- When translated to folders, branch names might only contain "[A-Za-z0-9\-_]". Any character outside of these gets replaced by "--"
-- Project configuration can happen at two places: 1. the global configuration file; 2. at the project level
+- Repositories are called `roots`
+- Worktrees are called `trees`
+- `roots` live under `{base_dir}/roots`
+- `trees` live under `{base_dir}/trees`
+- All trees exist under the `trees` folder, regardless of `root`
+- `tree` folders are named after the following pattern: `{root}--{branch-name}`
+- When creating the `tree` folder name, `root` and `branch-name` get normalized by replacing any character different from `[A-Za-z0-9\-_]` by `--`
 
-## Configuration
-```config.toml
-[general]
-base_dir = "~/Projects"
-copy = ["./.envrc", ".env"]
-exec = []
+## Nice! How can I install this?
 
-[roots.{repo-name]]
-copy = [".envrc", ".env", "some-other-file"]
-exec = [
-    "npm install"
-]
+### Nix flake
+
+```nix
+# flake.nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    forest.url = "github:tcione/forest";
+  };
+
+  outputs = { self, nixpkgs, forest }: {
+    # Add to your system packages
+    nixosConfigurations.yourhost = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        ({ pkgs, ... }: {
+          environment.systemPackages = [ forest.packages.x86_64-linux.forest ];
+        })
+      ];
+    };
+  };
+}
 ```
 
-## Project configuration
-```forest.toml
+Or with Home Manager:
+```nix
+# home.nix
+{ config, pkgs, ... }:
+{
+  imports = [ forest.homeManagerModules.default ];
+
+  programs.forest = {
+    enable = true;
+    settings = {
+      general = {
+        baseDir = "${config.home.homeDirectory}/Projects";
+        copy = [ ".env" ".envrc" ];
+        exec = [];
+      };
+    };
+  };
+}
+```
+
+### Homebrew
+
+```bash
+# Add the tap
+brew tap tcione/forest
+
+# Install forest
+brew install forest
+```
+
+### Other
+
+1. Download the latest binary for your system under [releases](https://github.com/tcione/forest/releases)
+2. Place somewhere visibile to your `PATH`
+
+## What does future look like? (roadmap)
+0.10.0 - Current version
+
+- [ ] Proper documentation
+- [ ] Test homebrew setup
+- [ ] 0.11.0: "fogo" bash setup (command that takes user to tree or root)
+- [ ] 0.12.0: Fuzzy selection in "path", "exec" and "create"
+- [ ] 0.13.0: CLI completions
+- [ ] 0.14.0: Allow use to create local repos via `forest root`
+- [ ] 0.15.0: Allow for local repo configs using `forest.toml` at the `root`'s folder
+- [ ] 0.15.1: Prepare repo for 1.0.0 by tidying up codebase, ensure consistency and double-checking standards. Check if there's anything else to take care before 1.0.0
+...
+- [ ] 1.0.0: "Formal" release of 1.0.0, no features here
+
+## Configuration
+
+If you have no configuration set, one is created for you when using the tool for the first time.
+
+The configuration file is stored in one of the following places:
+- **Linux**: `~/.config/forest/config.toml`
+- **macOS**: `~/Library/Application Support/forest/config.toml`
+
+And it looks like this:
+```config.toml
+[general]
+# Dir where /roots and /trees will be stored
+base_dir = "~/Projects"
+
+# Files to be copied from root to tree on creation
+copy = ["./.envrc", ".env"]
+
+# CLI commands to be called when creating a tree
+exec = []
+
+[roots.{repo-name}]
 copy = [".envrc", ".env", "some-other-file"]
 exec = [
     "npm install"
@@ -56,47 +122,68 @@ exec = [
 
 ## CLI
 
-`forest (plant|clone) <repository-address>`
-- clones repository into the roots directory
+### Main Command
 
-`forest (grow|create) <repository-name> <branch-name>`
-- creates a worktree in `trees/`
-- copies defined files
-- executes defined commands
-- If there's no configuration for that repo, give a warning
+```
+$ forest -h
+Convention-over-configuration CLI tool to manager git worktrees
 
-`forest (check|list) [--root=<repository-shorthand>]`
-- list all worktrees in the format "[<root>]  <branch name>"
-- if `--root` is given, it filters by it
+Usage: forest <COMMAND>
 
-`forest (nurture|goto) [--root=<repository-shorthand>] [--cmd=<command, default: "cd">]` [<root:branch>]
-- `--cmd` defines a command that's run again the full path for tree. Example where cmd is "cd": `cd <base-path>/trees/<worktree-folder>`
-- `cd` is the default value for `--cmd`
-- `<root:branch>` is optional, if not given, the command offers a list of worktrees
-- if `--root` is given, the list is filtered by `<root>`
+Commands:
+  roots  Manage git repositories in roots/
+  trees  Manage worktrees in trees/
+  help   Print this message or the help of the given subcommand(s)
 
-`forest (trim|clean) [--root=<repo>]`
-- Lists all worktrees
-- if `--root` is given, the list is filtered by `<root>`
-- Allows user to select the ones they want to delete
-- Deletes after asking confirmation
+Options:
+  -h, --help  Print help
+```
+
+### Roots Commands
+
+```
+$ forest roots -h
+Manage git repositories in roots/
+
+Usage: forest roots <COMMAND>
+
+Commands:
+  clone  Clone git repository inside roots/
+  list   List all repositories
+  path   Enter a repository directory
+  exec   Execute command in repository directory
+  help   Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help  Print help
+```
+
+### Trees Commands
+
+```
+$ forest trees -h
+Manage worktrees in trees/
+
+Usage: forest trees <COMMAND>
+
+Commands:
+  create  Create a worktree for the repo inside trees/
+  list    List all worktrees
+  path    Path to a worktree directory
+  exec    Execute command in worktree directory
+  clean   Clean up worktrees interactively
+  delete  Execute command in worktree directory
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help  Print help
+```
 
 ## License
 
 Forest is dual-licensed under either:
 
-* [MIT License](LICENSE-MIT)
-* [Apache License, Version 2.0](LICENSE-APACHE)
-
-at your option.
+- [MIT License](LICENSE-MIT)
+- [Apache License, Version 2.0](LICENSE-APACHE)
 
 This means you can choose either license when using this code. See the license files for details.
-
-## Rust standards
-
-- Swallowing errors using `let _ = ...` must be avoided. Only use with justification
-- Propagate errors with `?` operator
-- Testing:
-  - Mock API responses for reliable testing
-  - File I/O testing with temporary directories
-  - Each module tests its own domain logic

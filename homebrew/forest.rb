@@ -1,7 +1,7 @@
 class Forest < Formula
-  desc "A tool that manages worktrees for you"
+  desc "A CLI tool to make working with easier by establishing a few conventions and abstracting away some git commands."
   homepage "https://github.com/tcione/forest"
-  version "0.1.0"
+  version "0.10.0"
   license "MIT OR Apache-2.0"
 
   on_macos do

@@ -13,7 +13,7 @@
 
         forest = pkgs.rustPlatform.buildRustPackage {
           pname = "forest";
-          version = "0.1.0";
+          version = "0.10.0";
 
           src = ./.;
 
