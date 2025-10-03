@@ -7,10 +7,10 @@ class Forest < Formula
   on_macos do
     if Hardware::CPU.intel?
       url "https://github.com/tcione/forest/releases/download/v#{version}/forest-macos-x86_64"
-      sha256 "SHA256_PLACEHOLDER_INTEL"
+      sha256 "e5492f50537b83a92682177109c3b9c51b6d6644c439c4f57e5c801267b03d9d"
     else
       url "https://github.com/tcione/forest/releases/download/v#{version}/forest-macos-aarch64"
-      sha256 "SHA256_PLACEHOLDER_ARM"
+      sha256 "290d3c079f3a4b0f5d3b57795f5898b931174d2d00160133ef809ae4a4e45317"
     end
   end
 
