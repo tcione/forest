@@ -132,7 +132,7 @@ The `fogo` command provides quick navigation to roots and trees:
 3. Use git normally inside `tree` and `root` (just avoid leaving the default branch in `root`)
 
 ## What does future look like? (roadmap)
-0.11.0 - Current version
+0.11.1 - Current version
 
 - [x] Proper documentation
 - [x] Test homebrew setup

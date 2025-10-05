@@ -94,7 +94,7 @@ in {
       builtins.readFile ./fogo.bash
     );
 
-    programs.zsh.initExtra = mkIf cfg.enableZshIntegration (
+    programs.zsh.initContent = mkIf cfg.enableZshIntegration (
       builtins.readFile ./fogo.bash
     );
 
