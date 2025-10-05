@@ -5,6 +5,11 @@
   programs.forest = {
     enable = true;
 
+    # Shell integration for fogo command (default: true)
+    # enableBashIntegration = true;
+    # enableZshIntegration = true;
+    # enableFishIntegration = true;
+
     settings = {
       general = {
         baseDir = "/home/user/Development";

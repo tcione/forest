@@ -25,6 +25,24 @@ in {
       description = "The forest package to use";
     };
 
+    enableBashIntegration = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to enable Bash integration for fogo command";
+    };
+
+    enableZshIntegration = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to enable Zsh integration for fogo command";
+    };
+
+    enableFishIntegration = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to enable Fish integration for fogo command";
+    };
+
     settings = {
       general = {
         baseDir = mkOption {
@@ -71,5 +89,17 @@ in {
   config = mkIf cfg.enable {
     home.packages = [ cfg.package ];
     xdg.configFile."forest/config.toml".source = configFile;
+
+    programs.bash.initExtra = mkIf cfg.enableBashIntegration (
+      builtins.readFile ./fogo.bash
+    );
+
+    programs.zsh.initExtra = mkIf cfg.enableZshIntegration (
+      builtins.readFile ./fogo.bash
+    );
+
+    programs.fish.interactiveShellInit = mkIf cfg.enableFishIntegration (
+      builtins.readFile ./fogo.fish
+    );
   };
 }

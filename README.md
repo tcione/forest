@@ -106,6 +106,20 @@ programs.forest = {
 brew install tcione/tap/forest
 ```
 
+### Shell Integration (fogo command)
+
+The `fogo` command provides quick navigation to roots and trees:
+- `fogo` → List all trees
+- `fogo <root>` → Navigate to root directory
+- `fogo <root> <tree>` → Navigate to tree directory
+- `fogo -h` → Show help
+
+**Automatic setup:** Enabled by default for Nix home-manager users.
+
+**Manual setup:**
+- **Bash/Zsh:** Source [nix/fogo.bash](nix/fogo.bash) in your `~/.bashrc` or `~/.zshrc`
+- **Fish:** Source [nix/fogo.fish](nix/fogo.fish) in your `~/.config/fish/config.fish`
+
 ### Other
 
 1. Download the latest binary for your system under [releases](https://github.com/tcione/forest/releases)
@@ -118,11 +132,11 @@ brew install tcione/tap/forest
 3. Use git normally inside `tree` and `root` (just avoid leaving the default branch in `root`)
 
 ## What does future look like? (roadmap)
-0.10.1 - Current version
+0.11.0 - Current version
 
 - [x] Proper documentation
 - [x] Test homebrew setup
-- [ ] 0.11.0: "fogo" bash setup (command that takes user to tree or root)
+- [x] 0.11.0: "fogo" bash setup (command that takes user to tree or root)
 - [ ] 0.12.0: Fuzzy selection in "path", "exec" and "create"
 - [ ] 0.13.0: CLI completions
 - [ ] 0.14.0: Allow user to create local repos via `forest roots`
