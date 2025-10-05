@@ -106,7 +106,12 @@ programs.forest = {
 brew install tcione/tap/forest
 ```
 
-### Shell Integration (fogo command)
+### Other
+
+1. Download the latest binary for your system under [releases](https://github.com/tcione/forest/releases)
+2. Place somewhere visible in your `PATH`
+
+### BONUS: Shell Integration (fogo command)
 
 The `fogo` command provides quick navigation to roots and trees:
 - `fogo` → List all trees
@@ -114,16 +119,11 @@ The `fogo` command provides quick navigation to roots and trees:
 - `fogo <root> <tree>` → Navigate to tree directory
 - `fogo -h` → Show help
 
-**Automatic setup:** Enabled by default for Nix home-manager users.
+:zap:: The shell integration is enabled by default for Home Manager users.
 
 **Manual setup:**
 - **Bash/Zsh:** Source [nix/fogo.bash](nix/fogo.bash) in your `~/.bashrc` or `~/.zshrc`
 - **Fish:** Source [nix/fogo.fish](nix/fogo.fish) in your `~/.config/fish/config.fish`
-
-### Other
-
-1. Download the latest binary for your system under [releases](https://github.com/tcione/forest/releases)
-2. Place somewhere visible in your `PATH`
 
 ## Now how can I use it?
 
