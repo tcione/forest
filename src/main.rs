@@ -45,10 +45,9 @@ enum RootsCommands {
     List,
 
     /// Show full path to a specific root
-    #[command(arg_required_else_help = true)]
     Path {
         /// Root name (same as repo)
-        root: String,
+        root: Option<String>,
     },
 
     /// Execute a command against a root.

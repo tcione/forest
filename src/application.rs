@@ -55,8 +55,8 @@ impl Application {
         }
     }
 
-    pub fn roots_path(&self, root: String) {
-        match roots::get::call(&self.roots_dir, &root) {
+    pub fn roots_path(&self, root: Option<String>) {
+        match roots::get_interactive::call(&self.roots_dir, root.as_deref()) {
             Ok(root) => {
                 println!("{}", root.path.display());
             },

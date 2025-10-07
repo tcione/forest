@@ -145,6 +145,10 @@ The `fogo` command provides quick navigation to roots and trees:
 ...
 - [ ] 1.0.0: "Formal" release of 1.0.0, no features here
 
+## Beyond 1.0
+
+- Maybe having multiple workspaces?
+
 ## Configuration
 
 If you have no configuration set, one is created for you when using the tool for the first time.
