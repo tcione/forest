@@ -10,7 +10,6 @@ pub struct Root {
 
 pub mod clone;
 pub mod get;
-pub mod get_interactive;
 pub mod exec;
 pub mod list;
 pub mod fuzzy_selector;

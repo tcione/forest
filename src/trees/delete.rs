@@ -5,7 +5,7 @@ use crate::utils::git::Git;
 use anyhow::{Context, Result};
 
 pub fn call(application: &Application, root: &str, tree: &str) -> Result<()> {
-    let root_obj = root_get_call(&application.roots_dir, root)
+    let root_obj = root_get_call(&application.roots_dir, Some(root.to_string()))
         .with_context(|| format!("Failed to find root '{}'", root))?;
     let tree_obj = get_call(application, root, tree)
         .with_context(|| format!("Failed to find tree '{}' in root '{}'", tree, root))?;

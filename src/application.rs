@@ -56,9 +56,9 @@ impl Application {
     }
 
     pub fn roots_path(&self, root: Option<String>) {
-        match roots::get_interactive::call(&self.roots_dir, root.as_deref()) {
-            Ok(root) => {
-                println!("{}", root.path.display());
+        match roots::get::call(&self.roots_dir, root) {
+            Ok(root_struct) => {
+                println!("{}", root_struct.path.display());
             },
             Err(err) => self.expected_error(err)
         }

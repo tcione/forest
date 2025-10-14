@@ -7,8 +7,8 @@ use super::{Root, list, get};
 use crate::utils::cli_ui;
 
 pub fn call(roots_dir: &Path, root: Option<String>) -> Result<Root> {
-    if let Some(some_root) = root {
-        let root_struct = get::call(roots_dir, &some_root)?;
+    if let Some(_) = root {
+        let root_struct = get::call(roots_dir, root)?;
         return Ok(root_struct);
     }
 
@@ -27,7 +27,8 @@ pub fn call(roots_dir: &Path, root: Option<String>) -> Result<Root> {
 
     match selection {
         Some(index) => {
-            let root_struct = get::call(roots_dir, &names[index])?;
+            let selected_root = Some(names[index].clone());
+            let root_struct = get::call(roots_dir, selected_root)?;
             Ok(root_struct)
         },
         None => anyhow::bail!("Root selection cancelled")
