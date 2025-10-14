@@ -64,8 +64,8 @@ impl Application {
         }
     }
 
-    pub fn roots_exec(&self, root: String, command: String) {
-        self.handle(roots::exec::call(&self.roots_dir, root, command))
+    pub fn roots_exec(&self, command: String, root: Option<String>) {
+        self.handle(roots::exec::call(&self.roots_dir, command, root))
     }
 
     pub fn trees_clean(&self, root: Option<String>) {

@@ -1,10 +1,10 @@
 use anyhow::Result;
 use std::fs::read_dir;
-use std::path::PathBuf;
+use std::path::Path;
 
 use super::{Roots, Root};
 
-pub fn call(roots_dir: &PathBuf) -> Result<Roots> {
+pub fn call(roots_dir: &Path) -> Result<Roots> {
     let mut roots: Roots = vec![];
 
     for root in read_dir(roots_dir.to_string_lossy().to_string())? {
@@ -29,6 +29,7 @@ mod tests {
     use super::*;
     use tempfile::TempDir;
     use std::fs::create_dir_all;
+    use std::path::PathBuf;
 
     #[test]
     fn test_list_run_with_empty_directory() {

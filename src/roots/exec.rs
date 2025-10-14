@@ -1,10 +1,14 @@
 use anyhow::Result;
 use std::path::PathBuf;
-use crate::utils::exec::{ExecError, call as exec_call};
 
-pub fn call(roots_dir: &PathBuf, root: String, command: String) -> Result<(), ExecError> {
-    let root_dir = roots_dir.join(&root);
-    exec_call(&root_dir, &command)
+use crate::utils::exec::call as exec_call;
+use super::fuzzy_selector::call as fuzzy_selector_call;
+
+pub fn call(roots_dir: &PathBuf, command: String, root: Option<String>) -> Result<()> {
+    let root_struct = fuzzy_selector_call(roots_dir, root)?;
+    exec_call(&root_struct.path, &command)?;
+
+    Ok(())
 }
 
 #[cfg(test)]
@@ -23,8 +27,8 @@ mod tests {
 
         call(
             &roots_dir,
-            "test-repo".to_string(),
             "echo testing > testfile.txt".to_string(),
+            Some("test-repo".to_string()),
         )
         .unwrap();
 

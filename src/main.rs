@@ -54,8 +54,9 @@ enum RootsCommands {
     /// Similar to entering root dir and inputting <command>
     #[command(arg_required_else_help = true)]
     Exec {
-        /// Root name (same as repo)
-        root: String,
+        /// Root name (same as repo) - If none given, a interactively list pops in
+        #[arg(short, long)]
+        root: Option<String>,
         /// Command to execute
         command: String,
     },
@@ -126,7 +127,7 @@ fn main() {
     match args.command {
         Commands::Roots(roots_cmd) => match roots_cmd {
             RootsCommands::Clone { repository_address } => forest.roots_clone(repository_address),
-            RootsCommands::Exec { root, command } => forest.roots_exec(root, command),
+            RootsCommands::Exec { root, command } => forest.roots_exec(command, root),
             RootsCommands::List => forest.roots_list(),
             RootsCommands::Path { root } => forest.roots_path(root),
         },
