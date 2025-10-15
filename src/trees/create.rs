@@ -1,25 +1,40 @@
+use super::Tree;
+use crate::application::Application;
+use crate::roots::fuzzy_selector::call as fuzzy_selector_call;
+use crate::utils::cli_ui;
+use crate::utils::exec::call as exec_call;
+use crate::utils::git::Git;
 use anyhow::Result;
 use regex::Regex;
 use std::path::PathBuf;
 
-use crate::utils::cli_ui;
-use crate::utils::exec::{call as exec_call};
-use crate::utils::git::Git;
-use crate::application::Application;
-use crate::roots::fuzzy_selector::call as fuzzy_selector_call;
-
-pub fn call(application: &Application, new_branch_name: &str, root: Option<String>) -> Result<()> {
+pub fn call(
+    application: &Application,
+    new_branch_name: &str,
+    root: Option<String>,
+) -> Result<Tree> {
     let roots_dir = &application.roots_dir;
     let trees_dir = &application.trees_dir;
     let root_struct = fuzzy_selector_call(roots_dir, root)?;
-    let branch_tree = trees_dir.join(tree_name(&root_struct.name, new_branch_name));
+    let tree_name = tree_name(&root_struct.name, new_branch_name);
+    let branch_tree = trees_dir.join(&tree_name);
 
     Git::new(&root_struct.path).latest_default()?;
     Git::new(&root_struct.path).add_worktree(new_branch_name, &branch_tree)?;
 
-    set_up_worktree(application, &root_struct.name, &root_struct.path, &branch_tree)?;
+    set_up_worktree(
+        application,
+        &root_struct.name,
+        &root_struct.path,
+        &branch_tree,
+    )?;
 
-    Ok(())
+    Ok(Tree {
+        name: tree_name,
+        path: branch_tree,
+        branch: new_branch_name.to_string(),
+        head: "".to_string(),
+    })
 }
 
 fn tree_name(root: &str, new_branch_name: &str) -> String {
@@ -56,11 +71,15 @@ fn copy_files(repo_root: &PathBuf, branch_tree: &PathBuf, copy: &Vec<String>) {
         let source = repo_root.join(file_name);
         let destination = branch_tree.join(file_name);
 
-        let start = format!("Copying '{}' into '{}'...", file_name, branch_tree.to_string_lossy());
+        let start = format!(
+            "Copying '{}' into '{}'...",
+            file_name,
+            branch_tree.to_string_lossy()
+        );
         println!("{}", cli_ui::context(&start));
 
         if !source.exists() {
-            println!("{}", cli_ui::context_warn("...skipped (does not exist)"));
+            eprintln!("{}", cli_ui::context_warn("...skipped (does not exist)"));
             continue;
         }
 
@@ -83,12 +102,12 @@ fn exec_commands(branch_tree: &PathBuf, exec: &Vec<String>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::application::test_application;
+    use crate::config::RootConfig;
+    use crate::roots::clone;
     use std::collections::HashMap;
     use std::fs;
     use tempfile::TempDir;
-    use crate::roots::clone;
-    use crate::application::test_application;
-    use crate::config::RootConfig;
 
     const TEST_REPO_URL: &str = "https://github.com/tcione/test-repo.git";
 
@@ -116,17 +135,32 @@ mod tests {
         let application = test_application(
             vec![".env".to_string()],
             vec!["echo 'setup complete' > setup_via_exec.txt".to_string()],
-            HashMap::new()
+            HashMap::new(),
         );
-        let tree_path = application.trees_dir.join("test-repo--feature--new-feature");
+        let tree_path = application
+            .trees_dir
+            .join("test-repo--feature--new-feature");
 
         clone::call(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
-        fs::write(&application.roots_dir.join("test-repo").join(".env"), "VAR=test").unwrap();
+        fs::write(
+            &application.roots_dir.join("test-repo").join(".env"),
+            "VAR=test",
+        )
+        .unwrap();
 
-        call(&application, "feature/new-feature", Some("test-repo".to_string())).unwrap();
+        let tree = call(
+            &application,
+            "feature/new-feature",
+            Some("test-repo".to_string()),
+        )
+        .unwrap();
+
+        assert_eq!(tree.name, "test-repo--feature--new-feature");
+        assert_eq!(tree.branch, "feature/new-feature");
+        assert_eq!(tree.path, tree_path);
+        assert_eq!(tree.head, "");
 
         let tree_branch = tree_branch(&tree_path).unwrap();
-
         assert_eq!(tree_branch, "feature/new-feature".to_string());
         assert!(tree_path.join(".env").exists());
         assert!(tree_path.join("setup_via_exec.txt").exists());
@@ -135,9 +169,17 @@ mod tests {
     #[test]
     fn test_create_with_nonexistent_repo() {
         let application = test_application(vec![], vec![], HashMap::new());
-        let err = call(&application, "feature/test", Some("nonexistent-repo".to_string())).unwrap_err();
+        let err = call(
+            &application,
+            "feature/test",
+            Some("nonexistent-repo".to_string()),
+        )
+        .unwrap_err();
 
-        assert!(err.to_string().contains("Root 'nonexistent-repo' does not exist"))
+        assert!(
+            err.to_string()
+                .contains("Root 'nonexistent-repo' does not exist")
+        )
     }
 
     #[test]
@@ -145,8 +187,18 @@ mod tests {
         let application = test_application(vec![], vec![], HashMap::new());
 
         clone::call(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
-        call(&application, "feature/new-feature", Some("test-repo".to_string())).unwrap();
-        let err = call(&application, "feature/new-feature", Some("test-repo".to_string())).unwrap_err();
+        call(
+            &application,
+            "feature/new-feature",
+            Some("test-repo".to_string()),
+        )
+        .unwrap();
+        let err = call(
+            &application,
+            "feature/new-feature",
+            Some("test-repo".to_string()),
+        )
+        .unwrap_err();
 
         assert!(
             err.to_string()
@@ -196,7 +248,7 @@ mod tests {
         copy_files(
             &repo_root.path().to_path_buf(),
             &branch_tree.path().to_path_buf(),
-            &empty_copy_list
+            &empty_copy_list,
         );
 
         assert_eq!(branch_tree.path().read_dir().unwrap().count(), 0);
@@ -213,19 +265,25 @@ mod tests {
         let copy_list = vec![
             "file1.txt".to_string(),
             "nonexistent.txt".to_string(),
-            "file2.txt".to_string()
+            "file2.txt".to_string(),
         ];
 
         copy_files(
             &repo_root.path().to_path_buf(),
             &branch_tree.path().to_path_buf(),
-            &copy_list
+            &copy_list,
         );
 
         assert!(branch_tree.path().join("file1.txt").exists());
         assert!(branch_tree.path().join("file2.txt").exists());
-        assert_eq!(fs::read_to_string(branch_tree.path().join("file1.txt")).unwrap(), "content1");
-        assert_eq!(fs::read_to_string(branch_tree.path().join("file2.txt")).unwrap(), "content2");
+        assert_eq!(
+            fs::read_to_string(branch_tree.path().join("file1.txt")).unwrap(),
+            "content1"
+        );
+        assert_eq!(
+            fs::read_to_string(branch_tree.path().join("file2.txt")).unwrap(),
+            "content2"
+        );
         assert!(!branch_tree.path().join("nonexistent.txt").exists());
     }
 
@@ -234,10 +292,7 @@ mod tests {
         let branch_tree = TempDir::new().unwrap();
         let empty_exec_list = vec![];
 
-        exec_commands(
-            &branch_tree.path().to_path_buf(),
-            &empty_exec_list
-        );
+        exec_commands(&branch_tree.path().to_path_buf(), &empty_exec_list);
 
         // Function completes without panicking - that's the test
     }
@@ -247,17 +302,16 @@ mod tests {
         let branch_tree = TempDir::new().unwrap();
         let exec_list = vec![
             "echo 'test output' > output.txt".to_string(),
-            "ls".to_string()
+            "ls".to_string(),
         ];
 
-        exec_commands(
-            &branch_tree.path().to_path_buf(),
-            &exec_list
-        );
+        exec_commands(&branch_tree.path().to_path_buf(), &exec_list);
 
         assert!(branch_tree.path().join("output.txt").exists());
         assert_eq!(
-            fs::read_to_string(branch_tree.path().join("output.txt")).unwrap().trim(),
+            fs::read_to_string(branch_tree.path().join("output.txt"))
+                .unwrap()
+                .trim(),
             "test output"
         );
     }
@@ -267,17 +321,16 @@ mod tests {
         let branch_tree = TempDir::new().unwrap();
         let exec_list = vec![
             "nonexistent_command".to_string(),
-            "echo 'still works' > success.txt".to_string()
+            "echo 'still works' > success.txt".to_string(),
         ];
 
-        exec_commands(
-            &branch_tree.path().to_path_buf(),
-            &exec_list
-        );
+        exec_commands(&branch_tree.path().to_path_buf(), &exec_list);
 
         assert!(branch_tree.path().join("success.txt").exists());
         assert_eq!(
-            fs::read_to_string(branch_tree.path().join("success.txt")).unwrap().trim(),
+            fs::read_to_string(branch_tree.path().join("success.txt"))
+                .unwrap()
+                .trim(),
             "still works"
         );
     }
@@ -287,7 +340,7 @@ mod tests {
         let application = test_application(
             vec!["general_file.txt".to_string()],
             vec!["echo 'general command' > general_output.txt".to_string()],
-            HashMap::new()
+            HashMap::new(),
         );
         let repo_root = TempDir::new().unwrap();
         let branch_tree = TempDir::new().unwrap();
@@ -298,8 +351,9 @@ mod tests {
             &application,
             "test-repo",
             &repo_root.path().to_path_buf(),
-            &branch_tree.path().to_path_buf()
-        ).unwrap();
+            &branch_tree.path().to_path_buf(),
+        )
+        .unwrap();
 
         assert!(branch_tree.path().join("general_file.txt").exists());
         assert_eq!(
@@ -308,7 +362,9 @@ mod tests {
         );
         assert!(branch_tree.path().join("general_output.txt").exists());
         assert_eq!(
-            fs::read_to_string(branch_tree.path().join("general_output.txt")).unwrap().trim(),
+            fs::read_to_string(branch_tree.path().join("general_output.txt"))
+                .unwrap()
+                .trim(),
             "general command"
         );
     }
@@ -316,15 +372,18 @@ mod tests {
     #[test]
     fn test_set_up_worktree_with_root_config() {
         let mut root_configs = HashMap::new();
-        root_configs.insert("test-repo".to_string(), RootConfig {
-            copy: vec!["root_file.txt".to_string()],
-            exec: vec!["echo 'root command' > root_output.txt".to_string()],
-        });
+        root_configs.insert(
+            "test-repo".to_string(),
+            RootConfig {
+                copy: vec!["root_file.txt".to_string()],
+                exec: vec!["echo 'root command' > root_output.txt".to_string()],
+            },
+        );
 
         let application = test_application(
             vec!["general_file.txt".to_string()],
             vec!["echo 'general command' > general_output.txt".to_string()],
-            root_configs
+            root_configs,
         );
         let repo_root = TempDir::new().unwrap();
         let branch_tree = TempDir::new().unwrap();
@@ -336,8 +395,9 @@ mod tests {
             &application,
             "test-repo",
             &repo_root.path().to_path_buf(),
-            &branch_tree.path().to_path_buf()
-        ).unwrap();
+            &branch_tree.path().to_path_buf(),
+        )
+        .unwrap();
 
         assert!(branch_tree.path().join("root_file.txt").exists());
         assert!(!branch_tree.path().join("general_file.txt").exists());

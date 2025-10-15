@@ -73,7 +73,13 @@ impl Application {
     }
 
     pub fn trees_create(&self, new_branch_name: String, root: Option<String>) {
-        self.handle(trees::create::call(&self, &new_branch_name, root))
+        match trees::create::call(&self, &new_branch_name, root) {
+            Ok(tree) => {
+                eprintln!("{}", cli_ui::context("New worktree created at:"));
+                println!("{}", tree.path.display());
+            },
+            Err(err) => self.expected_error(err)
+        }
     }
 
     pub fn trees_delete(&self, root: String, tree: String) {
