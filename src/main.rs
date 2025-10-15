@@ -46,7 +46,8 @@ enum RootsCommands {
 
     /// Show full path to a specific root
     Path {
-        /// Root name (same as repo)
+        /// Root name (same as repo) - If none given, a interactively list pops in
+        #[arg(short, long)]
         root: Option<String>,
     },
 
