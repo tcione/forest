@@ -68,8 +68,9 @@ enum TreesCommands {
     /// Create a worktree for the repo inside trees/
     #[command(arg_required_else_help = true)]
     Create {
-        /// Root name (same as repo)
-        root: String,
+        /// Root name (same as repo) - If none given, a interactively list pops in
+        #[arg(short, long)]
+        root: Option<String>,
         /// Name for your new branch. Follow your git conventions
         new_branch_name: String,
     },
@@ -134,7 +135,7 @@ fn main() {
         },
         Commands::Trees(trees_cmd) => match trees_cmd {
             TreesCommands::Clean { root } => forest.trees_clean(root),
-            TreesCommands::Create { root, new_branch_name } => forest.trees_create(root, new_branch_name),
+            TreesCommands::Create { root, new_branch_name } => forest.trees_create(new_branch_name, root),
             TreesCommands::Delete { root, tree } => forest.trees_delete(root, tree),
             TreesCommands::Exec { root, tree, command } => forest.trees_exec(root, tree, command),
             TreesCommands::List { root } => forest.trees_list(root),

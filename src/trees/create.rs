@@ -6,17 +6,18 @@ use crate::utils::cli_ui;
 use crate::utils::exec::{call as exec_call};
 use crate::utils::git::Git;
 use crate::application::Application;
+use crate::roots::fuzzy_selector::call as fuzzy_selector_call;
 
-pub fn call(application: &Application, root: &str, new_branch_name: &str) -> Result<()> {
+pub fn call(application: &Application, new_branch_name: &str, root: Option<String>) -> Result<()> {
     let roots_dir = &application.roots_dir;
     let trees_dir = &application.trees_dir;
-    let repo_root = roots_dir.join(root);
-    let branch_tree = trees_dir.join(tree_name(root, new_branch_name));
+    let root_struct = fuzzy_selector_call(roots_dir, root)?;
+    let branch_tree = trees_dir.join(tree_name(&root_struct.name, new_branch_name));
 
-    Git::new(&repo_root).latest_default()?;
-    Git::new(&repo_root).add_worktree(new_branch_name, &branch_tree)?;
+    Git::new(&root_struct.path).latest_default()?;
+    Git::new(&root_struct.path).add_worktree(new_branch_name, &branch_tree)?;
 
-    set_up_worktree(application, root, &repo_root, &branch_tree)?;
+    set_up_worktree(application, &root_struct.name, &root_struct.path, &branch_tree)?;
 
     Ok(())
 }
@@ -122,7 +123,7 @@ mod tests {
         clone::call(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
         fs::write(&application.roots_dir.join("test-repo").join(".env"), "VAR=test").unwrap();
 
-        call(&application, "test-repo", "feature/new-feature").unwrap();
+        call(&application, "feature/new-feature", Some("test-repo".to_string())).unwrap();
 
         let tree_branch = tree_branch(&tree_path).unwrap();
 
@@ -134,9 +135,9 @@ mod tests {
     #[test]
     fn test_create_with_nonexistent_repo() {
         let application = test_application(vec![], vec![], HashMap::new());
-        let err = call(&application, "nonexistent-repo", "feature/test").unwrap_err();
+        let err = call(&application, "feature/test", Some("nonexistent-repo".to_string())).unwrap_err();
 
-        assert!(err.to_string().contains("No such file or directory"))
+        assert!(err.to_string().contains("Root 'nonexistent-repo' does not exist"))
     }
 
     #[test]
@@ -144,8 +145,8 @@ mod tests {
         let application = test_application(vec![], vec![], HashMap::new());
 
         clone::call(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
-        call(&application, "test-repo", "feature/new-feature").unwrap();
-        let err = call(&application, "test-repo", "feature/new-feature").unwrap_err();
+        call(&application, "feature/new-feature", Some("test-repo".to_string())).unwrap();
+        let err = call(&application, "feature/new-feature", Some("test-repo".to_string())).unwrap_err();
 
         assert!(
             err.to_string()

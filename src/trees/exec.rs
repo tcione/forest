@@ -32,7 +32,7 @@ mod tests {
         let application = test_application(vec![], vec![], HashMap::new());
 
         clone::call(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
-        create::call(&application, "test-repo", "feature").unwrap();
+        create::call(&application, "feature", Some("test-repo".to_string())).unwrap();
 
         let tree_dir = application.trees_dir.join("test-repo--feature");
         let result = call(

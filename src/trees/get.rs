@@ -75,7 +75,7 @@ mod tests {
         let application = test_application(vec![], vec![], HashMap::new());
 
         clone::call(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
-        create::call(&application, "test-repo", "other-tree").unwrap();
+        create::call(&application, "other-tree", Some("test-repo".to_string())).unwrap();
 
         let result = call(
             &application,
@@ -97,7 +97,7 @@ mod tests {
         let application = test_application(vec![], vec![], HashMap::new());
 
         clone::call(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
-        create::call(&application, "test-repo", "feature").unwrap();
+        create::call(&application, "feature", Some("test-repo".to_string())).unwrap();
 
         let result = call(&application, "test-repo", "feature");
 

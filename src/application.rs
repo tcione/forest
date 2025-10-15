@@ -72,8 +72,8 @@ impl Application {
         self.handle(trees::clean::call(&self, root))
     }
 
-    pub fn trees_create(&self, root: String, new_branch_name: String) {
-        self.handle(trees::create::call(&self, &root, &new_branch_name))
+    pub fn trees_create(&self, new_branch_name: String, root: Option<String>) {
+        self.handle(trees::create::call(&self, &new_branch_name, root))
     }
 
     pub fn trees_delete(&self, root: String, tree: String) {

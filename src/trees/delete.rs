@@ -35,7 +35,7 @@ mod tests {
         let application = test_application(vec![], vec![], HashMap::new());
 
         clone::call(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
-        create::call(&application, "test-repo", "feature-branch").unwrap();
+        create::call(&application, "feature-branch", Some("test-repo".to_string())).unwrap();
 
         let tree_path = application.trees_dir.join("test-repo--feature-branch");
         assert!(tree_path.exists());
