@@ -95,8 +95,15 @@ fn main() -> Result<()> {
             Ok(())
         }
         Commands::Merge { source, target } => {
-            println!("grove merge: {} -> {}", source, target);
-            todo!("Implement merge")
+            let repo = grove::GroveRepo::discover()?;
+            let result = grove::merge(&repo, &source, &target)?;
+            println!(
+                "Merged '{}' into '{}' ({})",
+                result.source,
+                result.target,
+                result.target_worktree.display()
+            );
+            Ok(())
         }
     }
 }
