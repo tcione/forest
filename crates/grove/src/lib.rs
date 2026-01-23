@@ -5,6 +5,8 @@
 
 pub mod config;
 pub mod git;
+pub mod init;
 pub mod worktree;
 
 pub use config::GroveConfig;
+pub use init::{InitResult, init};

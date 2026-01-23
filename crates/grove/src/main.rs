@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(name = "grove")]
@@ -15,6 +16,9 @@ enum Commands {
     Init {
         /// URL to clone from (if not provided, converts current repo to bare)
         url: Option<String>,
+        /// Target directory (defaults to repo name for clone, current dir for convert)
+        #[arg(short, long)]
+        target: Option<PathBuf>,
     },
     /// Create a new worktree from the latest remote main branch
     Create {
@@ -46,9 +50,15 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Init { url } => {
-            println!("grove init: {:?}", url);
-            todo!("Implement init")
+        Commands::Init { url, target } => {
+            let result = grove::init(url.as_deref(), target.as_deref())?;
+            println!(
+                "Initialized grove repository at: {}",
+                result.repo_path.display()
+            );
+            println!("Main branch: {}", result.main_branch);
+            println!("Main tree: {}", result.main_tree_path.display());
+            Ok(())
         }
         Commands::Create { branch } => {
             println!("grove create: {}", branch);
