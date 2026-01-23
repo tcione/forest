@@ -2,7 +2,7 @@ use anyhow::Result;
 use dialoguer::FuzzySelect;
 use std::path::Path;
 
-use super::{Root, list, get};
+use super::{Root, get, list};
 
 use crate::utils::cli_ui;
 
@@ -30,7 +30,7 @@ pub fn call(roots_dir: &Path, root: Option<String>) -> Result<Root> {
             let selected_root = Some(names[index].clone());
             let root_struct = get::call(roots_dir, selected_root)?;
             Ok(root_struct)
-        },
-        None => anyhow::bail!("Root selection cancelled")
+        }
+        None => anyhow::bail!("Root selection cancelled"),
     }
 }

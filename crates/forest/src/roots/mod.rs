@@ -9,7 +9,7 @@ pub struct Root {
 }
 
 pub mod clone;
-pub mod get;
 pub mod exec;
-pub mod list;
 pub mod fuzzy_selector;
+pub mod get;
+pub mod list;

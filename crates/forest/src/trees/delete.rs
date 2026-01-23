@@ -35,16 +35,17 @@ mod tests {
         let application = test_application(vec![], vec![], HashMap::new());
 
         clone::call(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
-        create::call(&application, "feature-branch", Some("test-repo".to_string())).unwrap();
+        create::call(
+            &application,
+            "feature-branch",
+            Some("test-repo".to_string()),
+        )
+        .unwrap();
 
         let tree_path = application.trees_dir.join("test-repo--feature-branch");
         assert!(tree_path.exists());
 
-        let result = call(
-            &application,
-            "test-repo",
-            "feature-branch",
-        );
+        let result = call(&application, "test-repo", "feature-branch");
 
         assert!(result.is_ok());
         assert!(!tree_path.exists());
@@ -65,11 +66,7 @@ mod tests {
 
         clone::call(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
 
-        let result = call(
-            &application,
-            "test-repo",
-            "nonexistent-tree",
-        );
+        let result = call(&application, "test-repo", "nonexistent-tree");
 
         assert!(result.is_err());
         assert!(
@@ -84,11 +81,7 @@ mod tests {
     fn test_delete_tree_nonexistent_root() {
         let application = test_application(vec![], vec![], HashMap::new());
 
-        let result = call(
-            &application,
-            "nonexistent-root",
-            "some-tree",
-        );
+        let result = call(&application, "nonexistent-root", "some-tree");
 
         assert!(result.is_err());
         assert!(

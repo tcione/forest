@@ -34,11 +34,7 @@ mod tests {
     fn test_root_does_not_exist() {
         let application = test_application(vec![], vec![], HashMap::new());
 
-        let result = call(
-            &application,
-            "nonexistent-root",
-            "some-tree",
-        );
+        let result = call(&application, "nonexistent-root", "some-tree");
 
         assert!(result.is_err());
         assert!(
@@ -55,11 +51,7 @@ mod tests {
 
         clone::call(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
 
-        let result = call(
-            &application,
-            "test-repo",
-            "nonexistent-tree",
-        );
+        let result = call(&application, "test-repo", "nonexistent-tree");
 
         assert!(result.is_err());
         assert!(
@@ -77,11 +69,7 @@ mod tests {
         clone::call(&application.roots_dir, TEST_REPO_URL.to_string()).unwrap();
         create::call(&application, "other-tree", Some("test-repo".to_string())).unwrap();
 
-        let result = call(
-            &application,
-            "test-repo",
-            "nonexistent-tree",
-        );
+        let result = call(&application, "test-repo", "nonexistent-tree");
 
         assert!(result.is_err());
         assert!(

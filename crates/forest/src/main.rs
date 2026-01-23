@@ -1,13 +1,13 @@
 mod application;
-mod trees;
-mod roots;
 mod config;
+mod roots;
+mod trees;
 
 mod utils {
-    pub mod path;
-    pub mod git;
-    pub mod exec;
     pub mod cli_ui;
+    pub mod exec;
+    pub mod git;
+    pub mod path;
 }
 
 use clap::{Parser, Subcommand};
@@ -135,9 +135,16 @@ fn main() {
         },
         Commands::Trees(trees_cmd) => match trees_cmd {
             TreesCommands::Clean { root } => forest.trees_clean(root),
-            TreesCommands::Create { root, new_branch_name } => forest.trees_create(new_branch_name, root),
+            TreesCommands::Create {
+                root,
+                new_branch_name,
+            } => forest.trees_create(new_branch_name, root),
             TreesCommands::Delete { root, tree } => forest.trees_delete(root, tree),
-            TreesCommands::Exec { root, tree, command } => forest.trees_exec(root, tree, command),
+            TreesCommands::Exec {
+                root,
+                tree,
+                command,
+            } => forest.trees_exec(root, tree, command),
             TreesCommands::List { root } => forest.trees_list(root),
             TreesCommands::Path { tree, root } => forest.trees_path(root, tree),
         },

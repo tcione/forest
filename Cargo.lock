@@ -209,6 +209,7 @@ dependencies = [
  "console",
  "dialoguer",
  "directories",
+ "grove",
  "regex",
  "serde",
  "tempfile",
@@ -246,6 +247,19 @@ dependencies = [
  "libc",
  "r-efi",
  "wasi 0.14.3+wasi-0.2.4",
+]
+
+[[package]]
+name = "grove"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "regex",
+ "serde",
+ "tempfile",
+ "thiserror",
+ "toml",
 ]
 
 [[package]]

@@ -8,10 +8,7 @@ use crate::utils::cli_ui;
 #[derive(Error, Debug)]
 pub enum ExecError {
     #[error("Command '{command}' failed with exit code {code}")]
-    CommandFailed {
-        command: String,
-        code: i32,
-    },
+    CommandFailed { command: String, code: i32 },
     #[error("Failed to execute: {0}")]
     IoError(#[from] std::io::Error),
 }
@@ -35,7 +32,7 @@ pub fn call(base_dir: &PathBuf, command: &str) -> Result<(), ExecError> {
         return Err(ExecError::CommandFailed {
             command: command.to_string(),
             code: status.code().unwrap_or(-1),
-        })
+        });
     }
 
     println!("{}", cli_ui::context("<< command done"));
@@ -71,11 +68,6 @@ mod tests {
         let result = call(&base_dir, "nosuchcommand");
 
         assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("nosuchcommand")
-        );
+        assert!(result.unwrap_err().to_string().contains("nosuchcommand"));
     }
 }

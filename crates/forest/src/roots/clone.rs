@@ -1,5 +1,5 @@
+use anyhow::{Context, Result};
 use std::path::PathBuf;
-use anyhow::{Result, Context};
 
 use super::Root;
 
@@ -8,7 +8,10 @@ use crate::utils::git::Git;
 // TODO: Handle github:org/repo
 pub fn call(roots_dir: &PathBuf, repository_address: String) -> Result<Root> {
     let gitless_repo_address = repository_address.replace(".git", "");
-    let repo_name = gitless_repo_address.split('/').last().context("Invalid repository URL")?;
+    let repo_name = gitless_repo_address
+        .split('/')
+        .last()
+        .context("Invalid repository URL")?;
     let repo_dir = roots_dir.join(repo_name);
 
     Git::new(&repo_dir).clone(&repository_address)?;
@@ -46,6 +49,9 @@ mod tests {
         let result = call(&roots_dir.path().to_path_buf(), "invalid-url".to_string());
         let err = result.unwrap_err();
 
-        assert!(err.to_string().contains("repository 'invalid-url' does not exist"))
+        assert!(
+            err.to_string()
+                .contains("repository 'invalid-url' does not exist")
+        )
     }
 }

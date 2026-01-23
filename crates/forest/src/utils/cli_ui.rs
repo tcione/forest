@@ -1,7 +1,7 @@
 use console::style;
 
-use crate::trees::Tree;
 use crate::roots::Root;
+use crate::trees::Tree;
 
 pub fn context(msg: &str) -> String {
     format!("{}", style(msg).dim())
@@ -38,7 +38,12 @@ pub fn tree(root: &str, tree: &Tree) -> String {
 pub fn tree_with_path(root: &str, tree: &Tree) -> String {
     let f_root = format!("[{}]", root);
     let path = format!("-> {}", tree.path.display());
-    format!("{} {} {}", style(f_root).cyan(), tree.branch, style(path).dim())
+    format!(
+        "{} {} {}",
+        style(f_root).cyan(),
+        tree.branch,
+        style(path).dim()
+    )
 }
 
 pub fn root_with_path(root: &Root) -> String {
