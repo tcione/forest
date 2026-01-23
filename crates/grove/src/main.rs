@@ -61,8 +61,11 @@ fn main() -> Result<()> {
             Ok(())
         }
         Commands::Create { branch } => {
-            println!("grove create: {}", branch);
-            todo!("Implement create")
+            let repo = grove::GroveRepo::discover()?;
+            let result = grove::create(&repo, &branch)?;
+            println!("Created worktree: {}", result.worktree_path.display());
+            println!("Branch: {}", result.branch);
+            Ok(())
         }
         Commands::Delete { branch } => {
             println!("grove delete: {}", branch);
