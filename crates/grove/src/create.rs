@@ -4,7 +4,7 @@ use crate::git;
 use crate::repo::GroveRepo;
 use crate::worktree::sanitize_branch_name;
 use anyhow::{Context, Result};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 /// Result of creating a worktree
@@ -92,7 +92,7 @@ fn ensure_main_tree(repo: &GroveRepo) -> Result<()> {
 }
 
 /// Copy configured files/directories from source to destination
-fn copy_paths(repo: &GroveRepo, source_tree: &PathBuf, dest_tree: &PathBuf) -> Result<()> {
+fn copy_paths(repo: &GroveRepo, source_tree: &Path, dest_tree: &Path) -> Result<()> {
     for path in &repo.config.copy.paths {
         let source = source_tree.join(path);
         let dest = dest_tree.join(path);
@@ -117,7 +117,7 @@ fn copy_paths(repo: &GroveRepo, source_tree: &PathBuf, dest_tree: &PathBuf) -> R
 }
 
 /// Recursively copy a directory
-fn copy_dir_recursive(source: &PathBuf, dest: &PathBuf) -> Result<()> {
+fn copy_dir_recursive(source: &Path, dest: &Path) -> Result<()> {
     std::fs::create_dir_all(dest)?;
 
     for entry in std::fs::read_dir(source)? {
@@ -137,7 +137,7 @@ fn copy_dir_recursive(source: &PathBuf, dest: &PathBuf) -> Result<()> {
 }
 
 /// Run post-create hooks
-fn run_post_create_hooks(repo: &GroveRepo, worktree_path: &PathBuf) -> Result<()> {
+fn run_post_create_hooks(repo: &GroveRepo, worktree_path: &Path) -> Result<()> {
     for cmd in &repo.config.hooks.post_create {
         let status = Command::new("sh")
             .arg("-c")
@@ -157,7 +157,7 @@ fn run_post_create_hooks(repo: &GroveRepo, worktree_path: &PathBuf) -> Result<()
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     use crate::init;
     use tempfile::TempDir;
 

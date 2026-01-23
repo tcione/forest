@@ -68,16 +68,31 @@ fn main() -> Result<()> {
             Ok(())
         }
         Commands::Delete { branch } => {
-            println!("grove delete: {}", branch);
-            todo!("Implement delete")
+            let repo = grove::GroveRepo::discover()?;
+            grove::delete(&repo, &branch)?;
+            println!("Deleted worktree and branch: {}", branch);
+            Ok(())
         }
         Commands::List => {
-            println!("grove list");
-            todo!("Implement list")
+            let repo = grove::GroveRepo::discover()?;
+            let worktrees = grove::list(&repo)?;
+
+            if worktrees.is_empty() {
+                println!("No worktrees found");
+            } else {
+                for wt in worktrees {
+                    let marker = if wt.is_main { " *" } else { "" };
+                    println!("{}{}\t{}", wt.branch, marker, wt.path.display());
+                }
+            }
+            Ok(())
         }
         Commands::Switch { branch } => {
-            println!("grove switch: {}", branch);
-            todo!("Implement switch")
+            let repo = grove::GroveRepo::discover()?;
+            let path = grove::switch(&repo, &branch)?;
+            // Print just the path for shell integration: cd $(grove switch branch)
+            println!("{}", path.display());
+            Ok(())
         }
         Commands::Merge { source, target } => {
             println!("grove merge: {} -> {}", source, target);

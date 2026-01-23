@@ -49,18 +49,15 @@ impl GroveRepo {
 
             // If it's a worktree, the git dir will be inside the main repo's worktrees folder
             // e.g., /path/to/bare-repo/worktrees/branch-name
-            if let Some(parent) = git_dir.parent() {
-                if parent
+            if let Some(parent) = git_dir.parent()
+                && parent
                     .file_name()
                     .map(|n| n == "worktrees")
                     .unwrap_or(false)
-                {
-                    if let Some(bare_repo) = parent.parent() {
-                        if git::is_bare_repo(bare_repo) {
-                            return Self::open(bare_repo);
-                        }
-                    }
-                }
+                && let Some(bare_repo) = parent.parent()
+                && git::is_bare_repo(bare_repo)
+            {
+                return Self::open(bare_repo);
             }
 
             // Check if the git dir itself is a bare repo
