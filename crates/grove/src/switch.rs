@@ -5,8 +5,7 @@ use crate::worktree::sanitize_branch_name;
 use anyhow::Result;
 use std::path::PathBuf;
 
-/// Get the path to a worktree for switching
-/// Returns the absolute path to the worktree
+/// Get the path to a worktree for shell integration (cd $(grove switch branch))
 pub fn switch(repo: &GroveRepo, branch: &str) -> Result<PathBuf> {
     let sanitized = sanitize_branch_name(branch);
     let worktree_path = repo.trees_dir().join(&sanitized);
@@ -52,7 +51,7 @@ mod tests {
         git::git_command(&["add", "."], Some(temp_dir.path())).unwrap();
         git::git_command(&["commit", "-m", "Initial commit"], Some(temp_dir.path())).unwrap();
 
-        init::init(None, Some(temp_dir.path())).unwrap();
+        init::init(None, Some(temp_dir.path()), "main").unwrap();
 
         temp_dir
     }
@@ -96,11 +95,8 @@ mod tests {
 
         create::create(&repo, "feature/test").unwrap();
 
-        // Should work with original name
         let path = switch(&repo, "feature/test").unwrap();
         assert!(path.exists());
-
-        // Path should contain sanitized name
         assert!(path.to_string_lossy().contains("feature--test"));
     }
 }

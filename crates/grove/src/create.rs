@@ -7,26 +7,21 @@ use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-/// Result of creating a worktree
 #[derive(Debug)]
 pub struct CreateResult {
-    /// Path to the created worktree
     pub worktree_path: PathBuf,
-    /// Branch name
     pub branch: String,
 }
 
-/// Create a new worktree from the latest remote main branch
+/// Create a new worktree from the latest remote default branch
 pub fn create(repo: &GroveRepo, branch: &str) -> Result<CreateResult> {
     let sanitized_branch = sanitize_branch_name(branch);
     let worktree_path = repo.trees_dir().join(&sanitized_branch);
 
-    // Check if worktree already exists
     if worktree_path.exists() {
         anyhow::bail!("Worktree already exists at: {}", worktree_path.display());
     }
 
-    // Check if branch already exists
     if git::branch_exists(&repo.path, branch) {
         anyhow::bail!(
             "Branch '{}' already exists. Use a different name or delete the existing branch.",
@@ -34,38 +29,32 @@ pub fn create(repo: &GroveRepo, branch: &str) -> Result<CreateResult> {
         );
     }
 
-    // Ensure main tree exists
-    ensure_main_tree(repo)?;
+    ensure_default_tree(repo)?;
 
-    // Fetch latest from remote
     if let Err(e) = git::fetch(&repo.path, "origin") {
         eprintln!("Warning: Failed to fetch from origin: {}", e);
     }
 
-    // Determine the start point (latest remote main or local main)
-    let main_branch = repo.main_branch();
+    let default_branch = repo.default_branch();
     let start_point = if git::git_command(
-        &["rev-parse", &format!("origin/{}", main_branch)],
+        &["rev-parse", &format!("origin/{}", default_branch)],
         Some(&repo.path),
     )
     .is_ok()
     {
-        format!("origin/{}", main_branch)
+        format!("origin/{}", default_branch)
     } else {
-        main_branch.to_string()
+        default_branch.to_string()
     };
 
-    // Create the worktree with a new branch
     git::add_worktree_new_branch(&repo.path, &worktree_path, branch, &start_point)
         .with_context(|| format!("Failed to create worktree for branch '{}'", branch))?;
 
-    // Copy files from main tree
-    let main_tree_path = repo.worktree_path(main_branch);
-    if main_tree_path.exists() {
-        copy_paths(repo, &main_tree_path, &worktree_path)?;
+    let default_tree_path = repo.worktree_path(default_branch);
+    if default_tree_path.exists() {
+        copy_paths(repo, &default_tree_path, &worktree_path)?;
     }
 
-    // Run post-create hooks
     run_post_create_hooks(repo, &worktree_path)?;
 
     Ok(CreateResult {
@@ -74,16 +63,15 @@ pub fn create(repo: &GroveRepo, branch: &str) -> Result<CreateResult> {
     })
 }
 
-/// Ensure the main worktree exists
-fn ensure_main_tree(repo: &GroveRepo) -> Result<()> {
-    let main_branch = repo.main_branch();
-    let main_tree_path = repo.worktree_path(main_branch);
+fn ensure_default_tree(repo: &GroveRepo) -> Result<()> {
+    let default_branch = repo.default_branch();
+    let default_tree_path = repo.worktree_path(default_branch);
 
-    if !main_tree_path.exists() {
-        git::add_worktree(&repo.path, &main_tree_path, main_branch).with_context(|| {
+    if !default_tree_path.exists() {
+        git::add_worktree(&repo.path, &default_tree_path, default_branch).with_context(|| {
             format!(
-                "Failed to create main worktree for branch '{}'",
-                main_branch
+                "Failed to create worktree for default branch '{}'",
+                default_branch
             )
         })?;
     }
@@ -183,7 +171,7 @@ mod tests {
         git::git_command(&["add", "."], Some(temp_dir.path())).unwrap();
         git::git_command(&["commit", "-m", "Initial commit"], Some(temp_dir.path())).unwrap();
 
-        init::init(None, Some(temp_dir.path())).unwrap();
+        init::init(None, Some(temp_dir.path()), "main").unwrap();
 
         temp_dir
     }
@@ -207,14 +195,7 @@ mod tests {
 
         let result = create(&repo, "feature/test").unwrap();
 
-        // The worktree path should have sanitized name
-        assert!(
-            result
-                .worktree_path
-                .to_string_lossy()
-                .contains("feature--test")
-        );
-        // But the actual branch name should be the original
+        assert!(result.worktree_path.to_string_lossy().contains("feature--test"));
         assert_eq!(result.branch, "feature/test");
     }
 
@@ -233,23 +214,17 @@ mod tests {
     #[test]
     fn test_create_copies_files() {
         let temp_dir = setup_grove_repo();
-
-        // Add a file to copy in main tree
         let repo = GroveRepo::open(temp_dir.path()).unwrap();
-        let main_tree = repo.worktree_path("main");
-        std::fs::write(main_tree.join(".env"), "SECRET=123").unwrap();
+        let default_tree = repo.worktree_path("main");
+        std::fs::write(default_tree.join(".env"), "SECRET=123").unwrap();
 
-        // Update config to copy .env
         let mut config = repo.config.clone();
         config.copy.paths = vec![".env".to_string()];
-        config.save(&temp_dir.path().join(".grove.toml")).unwrap();
+        config.save(&repo.config_path()).unwrap();
 
-        // Reload repo with new config
         let repo = GroveRepo::open(temp_dir.path()).unwrap();
-
         let result = create(&repo, "feature-copy").unwrap();
 
-        // Check the file was copied
         assert!(result.worktree_path.join(".env").exists());
         let content = std::fs::read_to_string(result.worktree_path.join(".env")).unwrap();
         assert_eq!(content, "SECRET=123");
@@ -258,24 +233,19 @@ mod tests {
     #[test]
     fn test_create_copies_directories() {
         let temp_dir = setup_grove_repo();
-
-        // Add a directory to copy in main tree
         let repo = GroveRepo::open(temp_dir.path()).unwrap();
-        let main_tree = repo.worktree_path("main");
-        let config_dir = main_tree.join("config");
+        let default_tree = repo.worktree_path("main");
+        let config_dir = default_tree.join("config");
         std::fs::create_dir_all(&config_dir).unwrap();
         std::fs::write(config_dir.join("local.json"), r#"{"key": "value"}"#).unwrap();
 
-        // Update config to copy config/
         let mut config = repo.config.clone();
         config.copy.paths = vec!["config".to_string()];
-        config.save(&temp_dir.path().join(".grove.toml")).unwrap();
+        config.save(&repo.config_path()).unwrap();
 
         let repo = GroveRepo::open(temp_dir.path()).unwrap();
-
         let result = create(&repo, "feature-dir-copy").unwrap();
 
-        // Check the directory was copied
         assert!(result.worktree_path.join("config").exists());
         assert!(result.worktree_path.join("config/local.json").exists());
     }
@@ -283,18 +253,15 @@ mod tests {
     #[test]
     fn test_create_runs_post_create_hooks() {
         let temp_dir = setup_grove_repo();
-
-        // Update config with a post-create hook
         let repo = GroveRepo::open(temp_dir.path()).unwrap();
+
         let mut config = repo.config.clone();
         config.hooks.post_create = vec!["touch .hook-ran".to_string()];
-        config.save(&temp_dir.path().join(".grove.toml")).unwrap();
+        config.save(&repo.config_path()).unwrap();
 
         let repo = GroveRepo::open(temp_dir.path()).unwrap();
-
         let result = create(&repo, "feature-hooks").unwrap();
 
-        // Check the hook ran
         assert!(result.worktree_path.join(".hook-ran").exists());
     }
 }

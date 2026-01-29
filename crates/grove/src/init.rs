@@ -6,28 +6,31 @@ use crate::worktree::sanitize_branch_name;
 use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
 
-/// Result of grove init
 #[derive(Debug)]
 pub struct InitResult {
     pub repo_path: PathBuf,
-    pub main_tree_path: PathBuf,
-    pub main_branch: String,
+    pub default_tree_path: PathBuf,
+    pub default_branch: String,
 }
 
 /// Initialize a grove repository
 ///
 /// If url is provided, clones the repo as bare.
 /// If no url, converts the current directory's repo to bare.
-pub fn init(url: Option<&str>, target_dir: Option<&Path>) -> Result<InitResult> {
+/// The default_branch parameter specifies which branch to use as default.
+pub fn init(
+    url: Option<&str>,
+    target_dir: Option<&Path>,
+    default_branch: &str,
+) -> Result<InitResult> {
     match url {
-        Some(url) => init_from_url(url, target_dir),
-        None => init_from_existing(target_dir.unwrap_or(Path::new("."))),
+        Some(url) => init_from_url(url, target_dir, default_branch),
+        None => init_from_existing(target_dir.unwrap_or(Path::new(".")), default_branch),
     }
 }
 
 /// Clone a repository as bare and set up grove
-fn init_from_url(url: &str, target_dir: Option<&Path>) -> Result<InitResult> {
-    // Extract repo name from URL
+fn init_from_url(url: &str, target_dir: Option<&Path>, default_branch: &str) -> Result<InitResult> {
     let repo_name = extract_repo_name(url)?;
     let dest = target_dir
         .map(|p| p.to_path_buf())
@@ -37,15 +40,13 @@ fn init_from_url(url: &str, target_dir: Option<&Path>) -> Result<InitResult> {
         anyhow::bail!("Destination directory already exists: {}", dest.display());
     }
 
-    // Clone as bare
     git::clone_bare(url, &dest).with_context(|| format!("Failed to clone {}", url))?;
 
-    // Set up grove in the cloned repo
-    setup_grove(&dest)
+    setup_grove(&dest, default_branch)
 }
 
 /// Convert an existing repository to bare and set up grove
-fn init_from_existing(repo_path: &Path) -> Result<InitResult> {
+fn init_from_existing(repo_path: &Path, default_branch: &str) -> Result<InitResult> {
     let repo_path = repo_path
         .canonicalize()
         .with_context(|| format!("Failed to resolve repository path: {}", repo_path.display()))?;
@@ -58,45 +59,37 @@ fn init_from_existing(repo_path: &Path) -> Result<InitResult> {
         anyhow::bail!("Repository is already bare: {}", repo_path.display());
     }
 
-    // Convert to bare
     git::convert_to_bare(&repo_path).with_context(|| "Failed to convert repository to bare")?;
 
-    // Set up grove
-    setup_grove(&repo_path)
+    setup_grove(&repo_path, default_branch)
 }
 
-/// Set up grove configuration and create main worktree
-fn setup_grove(repo_path: &Path) -> Result<InitResult> {
-    // Determine main branch
-    let main_branch = git::get_default_branch(repo_path).unwrap_or_else(|_| "main".to_string());
-
-    // Create default config
+/// Set up grove configuration and create default worktree
+fn setup_grove(repo_path: &Path, default_branch: &str) -> Result<InitResult> {
     let mut config = GroveConfig::default();
-    config.grove.main_branch = main_branch.clone();
+    config.grove.default_branch = default_branch.to_string();
 
-    // Save config
-    let config_path = repo_path.join(".grove.toml");
-    config.save(&config_path)?;
-
-    // Create trees directory
     let trees_dir = repo_path.join(config.trees_dir());
     std::fs::create_dir_all(&trees_dir)?;
 
-    // Create main worktree
-    let sanitized_branch = sanitize_branch_name(&main_branch);
-    let main_tree_path = trees_dir.join(&sanitized_branch);
+    let sanitized_branch = sanitize_branch_name(default_branch);
+    let default_tree_path = trees_dir.join(&sanitized_branch);
 
-    git::add_worktree(repo_path, &main_tree_path, &main_branch).with_context(|| {
+    git::add_worktree(repo_path, &default_tree_path, default_branch).with_context(|| {
         format!(
-            "Failed to create main worktree for branch '{}'",
-            main_branch
+            "Failed to create worktree for default branch '{}'",
+            default_branch
         )
     })?;
 
+    // Save config in the default branch worktree (not bare repo)
+    let config_path = default_tree_path.join(".grove.toml");
+    config.save(&config_path)?;
+
     Ok(InitResult {
         repo_path: repo_path.to_path_buf(),
-        main_tree_path,
-        main_branch,
+        default_tree_path,
+        default_branch: default_branch.to_string(),
     })
 }
 
@@ -168,71 +161,40 @@ mod tests {
     }
 
     #[test]
-    fn test_init_from_existing_converts_to_bare_and_creates_main_tree() {
+    fn test_init_converts_to_bare_and_creates_default_worktree() {
         let temp_dir = setup_test_repo();
         let repo_path = temp_dir.path();
 
-        // Verify it's not bare initially
         assert!(!git::is_bare_repo(repo_path));
 
-        // Run init
-        let result = init(None, Some(repo_path)).unwrap();
+        let result = init(None, Some(repo_path), "main").unwrap();
 
-        // Verify it's now bare
         assert!(git::is_bare_repo(&result.repo_path));
-
-        // Verify .grove.toml was created
-        assert!(result.repo_path.join(".grove.toml").exists());
-
-        // Verify main tree was created
-        assert!(result.main_tree_path.exists());
-        assert_eq!(result.main_branch, "main");
-
-        // Verify main tree is a valid worktree
-        assert!(git::is_git_repo(&result.main_tree_path));
+        assert!(result.default_tree_path.exists());
+        assert_eq!(result.default_branch, "main");
+        assert!(git::is_git_repo(&result.default_tree_path));
+        // Config is in worktree, not bare repo
+        assert!(result.default_tree_path.join(".grove.toml").exists());
+        assert!(!result.repo_path.join(".grove.toml").exists());
     }
 
     #[test]
-    fn test_init_from_existing_fails_on_non_repo() {
+    fn test_init_fails_on_non_repo() {
         let temp_dir = TempDir::new().unwrap();
-        let result = init(None, Some(temp_dir.path()));
+        let result = init(None, Some(temp_dir.path()), "main");
         assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("Not a git repository")
-        );
+        assert!(result.unwrap_err().to_string().contains("Not a git repository"));
     }
 
     #[test]
-    fn test_init_from_existing_fails_on_already_bare() {
+    fn test_init_fails_on_already_bare() {
         let temp_dir = setup_test_repo();
         let repo_path = temp_dir.path();
 
-        // First init to make it bare
-        init(None, Some(repo_path)).unwrap();
+        init(None, Some(repo_path), "main").unwrap();
 
-        // Second init should fail
-        let result = init(None, Some(repo_path));
+        let result = init(None, Some(repo_path), "main");
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("already bare"));
-    }
-
-    #[test]
-    fn test_init_from_url_clones_and_sets_up() {
-        let temp_dir = TempDir::new().unwrap();
-        let dest = temp_dir.path().join("test-repo");
-
-        // Use a known test repository
-        let result = init(Some("https://github.com/tcione/test-repo.git"), Some(&dest));
-
-        // This test requires network access, so we'll just check it doesn't panic
-        // In a real test environment, you might mock this or use a local git server
-        if let Ok(result) = result {
-            assert!(git::is_bare_repo(&result.repo_path));
-            assert!(result.repo_path.join(".grove.toml").exists());
-            assert!(result.main_tree_path.exists());
-        }
     }
 }

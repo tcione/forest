@@ -10,21 +10,17 @@ pub fn delete(repo: &GroveRepo, branch: &str) -> Result<()> {
     let sanitized = sanitize_branch_name(branch);
     let worktree_path = repo.trees_dir().join(&sanitized);
 
-    // Check if this is the main branch
-    if branch == repo.main_branch() {
-        anyhow::bail!("Cannot delete the main branch worktree");
+    if branch == repo.default_branch() {
+        anyhow::bail!("Cannot delete the default branch worktree");
     }
 
-    // Check if worktree exists
     if !worktree_path.exists() {
         anyhow::bail!("Worktree not found: {}", worktree_path.display());
     }
 
-    // Remove the worktree
     git::remove_worktree(&repo.path, &worktree_path)
         .with_context(|| format!("Failed to remove worktree at: {}", worktree_path.display()))?;
 
-    // Delete the branch
     if git::branch_exists(&repo.path, branch) {
         git::delete_branch(&repo.path, branch)
             .with_context(|| format!("Failed to delete branch: {}", branch))?;
@@ -62,7 +58,7 @@ mod tests {
         git::git_command(&["add", "."], Some(temp_dir.path())).unwrap();
         git::git_command(&["commit", "-m", "Initial commit"], Some(temp_dir.path())).unwrap();
 
-        init::init(None, Some(temp_dir.path())).unwrap();
+        init::init(None, Some(temp_dir.path()), "main").unwrap();
 
         temp_dir
     }
@@ -72,18 +68,13 @@ mod tests {
         let temp_dir = setup_grove_repo();
         let repo = GroveRepo::open(temp_dir.path()).unwrap();
 
-        // Create a worktree to delete
         let create_result = create::create(&repo, "feature-delete").unwrap();
         assert!(create_result.worktree_path.exists());
         assert!(git::branch_exists(&repo.path, "feature-delete"));
 
-        // Delete it
         delete(&repo, "feature-delete").unwrap();
 
-        // Verify worktree is gone
         assert!(!create_result.worktree_path.exists());
-
-        // Verify branch is gone
         assert!(!git::branch_exists(&repo.path, "feature-delete"));
     }
 
@@ -98,17 +89,12 @@ mod tests {
     }
 
     #[test]
-    fn test_cannot_delete_main_branch() {
+    fn test_cannot_delete_default_branch() {
         let temp_dir = setup_grove_repo();
         let repo = GroveRepo::open(temp_dir.path()).unwrap();
 
         let result = delete(&repo, "main");
         assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("Cannot delete the main branch")
-        );
+        assert!(result.unwrap_err().to_string().contains("Cannot delete the default branch"));
     }
 }

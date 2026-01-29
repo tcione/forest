@@ -8,33 +8,29 @@ use std::path::PathBuf;
 /// Information about a worktree
 #[derive(Debug, Clone)]
 pub struct WorktreeInfo {
-    /// Path to the worktree
     pub path: PathBuf,
-    /// Branch name
     pub branch: String,
-    /// Whether this is the main branch
-    pub is_main: bool,
+    pub is_default: bool,
 }
 
 /// List all worktrees in the repository
 pub fn list(repo: &GroveRepo) -> Result<Vec<WorktreeInfo>> {
     let worktrees = git::list_worktrees(&repo.path)?;
-    let main_branch = repo.main_branch();
+    let default_branch = repo.default_branch();
 
     let mut result: Vec<WorktreeInfo> = worktrees
         .into_iter()
         .map(|(path, branch)| WorktreeInfo {
             path: PathBuf::from(path),
             branch: branch.clone(),
-            is_main: branch == main_branch,
+            is_default: branch == default_branch,
         })
         .collect();
 
-    // Sort by branch name, with main first
     result.sort_by(|a, b| {
-        if a.is_main {
+        if a.is_default {
             std::cmp::Ordering::Less
-        } else if b.is_main {
+        } else if b.is_default {
             std::cmp::Ordering::Greater
         } else {
             a.branch.cmp(&b.branch)
@@ -73,7 +69,7 @@ mod tests {
         git::git_command(&["add", "."], Some(temp_dir.path())).unwrap();
         git::git_command(&["commit", "-m", "Initial commit"], Some(temp_dir.path())).unwrap();
 
-        init::init(None, Some(temp_dir.path())).unwrap();
+        init::init(None, Some(temp_dir.path()), "main").unwrap();
 
         temp_dir
     }
@@ -86,7 +82,7 @@ mod tests {
         let worktrees = list(&repo).unwrap();
 
         assert!(!worktrees.is_empty());
-        assert!(worktrees.iter().any(|w| w.branch == "main" && w.is_main));
+        assert!(worktrees.iter().any(|w| w.branch == "main" && w.is_default));
     }
 
     #[test]
@@ -118,6 +114,6 @@ mod tests {
 
         // Main should be first even though 'aaa' would come before 'main' alphabetically
         assert_eq!(worktrees[0].branch, "main");
-        assert!(worktrees[0].is_main);
+        assert!(worktrees[0].is_default);
     }
 }

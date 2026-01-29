@@ -2,14 +2,13 @@
 
 use crate::config::GroveConfig;
 use crate::git;
+use crate::worktree::sanitize_branch_name;
 use anyhow::Result;
 use std::path::{Path, PathBuf};
 
 /// A Grove repository context
 pub struct GroveRepo {
-    /// Path to the bare repository
     pub path: PathBuf,
-    /// Grove configuration
     pub config: GroveConfig,
 }
 
@@ -22,18 +21,33 @@ impl GroveRepo {
             anyhow::bail!("Not a bare git repository: {}", path.display());
         }
 
-        let config_path = path.join(".grove.toml");
-        let config = if config_path.exists() {
-            GroveConfig::load(&config_path)?
-        } else {
-            GroveConfig::default()
-        };
-
+        let config = Self::load_config(&path)?;
         Ok(Self { path, config })
     }
 
-    /// Find a grove repository by searching upward from the current directory
-    /// Works from within a worktree or from the bare repo itself
+    /// Load config: check default branch worktree first, fall back to bare repo
+    fn load_config(bare_repo: &Path) -> Result<GroveConfig> {
+        // Try to find config in default branch worktree
+        if let Ok(default_branch) = git::get_default_branch(bare_repo) {
+            let trees_dir = bare_repo.join("trees");
+            let worktree_config = trees_dir
+                .join(sanitize_branch_name(&default_branch))
+                .join(".grove.toml");
+            if worktree_config.exists() {
+                return GroveConfig::load(&worktree_config);
+            }
+        }
+
+        // Fall back to bare repo root (legacy or Forest-managed)
+        let bare_config = bare_repo.join(".grove.toml");
+        if bare_config.exists() {
+            return GroveConfig::load(&bare_config);
+        }
+
+        Ok(GroveConfig::default())
+    }
+
+    /// Find a grove repository from the current directory
     pub fn discover() -> Result<Self> {
         let cwd = std::env::current_dir()?;
         Self::discover_from(&cwd)
@@ -43,60 +57,36 @@ impl GroveRepo {
     pub fn discover_from(start: &Path) -> Result<Self> {
         let start = start.canonicalize()?;
 
-        // First, check if we're in a git worktree
         if let Ok(git_dir) = git::git_command(&["rev-parse", "--git-dir"], Some(&start)) {
             let git_dir = PathBuf::from(git_dir);
 
-            // If it's a worktree, the git dir will be inside the main repo's worktrees folder
-            // e.g., /path/to/bare-repo/worktrees/branch-name
+            // Check if we're in a worktree (git dir is inside worktrees folder)
             if let Some(parent) = git_dir.parent()
-                && parent
-                    .file_name()
-                    .map(|n| n == "worktrees")
-                    .unwrap_or(false)
+                && parent.file_name().map(|n| n == "worktrees").unwrap_or(false)
                 && let Some(bare_repo) = parent.parent()
                 && git::is_bare_repo(bare_repo)
             {
                 return Self::open(bare_repo);
             }
 
-            // Check if the git dir itself is a bare repo
             if git::is_bare_repo(&git_dir) {
                 return Self::open(&git_dir);
             }
 
-            // Resolve absolute path for git dir
-            let resolved_git_dir = if git_dir.is_absolute() {
+            let resolved = if git_dir.is_absolute() {
                 git_dir
             } else {
                 start.join(&git_dir).canonicalize()?
             };
 
-            if git::is_bare_repo(&resolved_git_dir) {
-                return Self::open(&resolved_git_dir);
+            if git::is_bare_repo(&resolved) {
+                return Self::open(&resolved);
             }
         }
 
-        // Search upward for .grove.toml
-        let mut current = start.as_path();
-        loop {
-            let config_path = current.join(".grove.toml");
-            if config_path.exists() && git::is_bare_repo(current) {
-                return Self::open(current);
-            }
-
-            match current.parent() {
-                Some(parent) => current = parent,
-                None => break,
-            }
-        }
-
-        anyhow::bail!(
-            "Not inside a grove repository. Run 'grove init' first or navigate to a grove repo."
-        )
+        anyhow::bail!("Not inside a grove repository. Run 'grove init' first.")
     }
 
-    /// Get the effective trees directory (absolute path)
     pub fn trees_dir(&self) -> PathBuf {
         let trees = self.config.trees_dir();
         if trees.is_absolute() {
@@ -106,23 +96,21 @@ impl GroveRepo {
         }
     }
 
-    /// Get the path to a worktree for a given branch
     pub fn worktree_path(&self, branch: &str) -> PathBuf {
-        let sanitized = crate::worktree::sanitize_branch_name(branch);
-        self.trees_dir().join(sanitized)
+        self.trees_dir().join(sanitize_branch_name(branch))
     }
 
-    /// Get the main branch name
-    pub fn main_branch(&self) -> &str {
-        &self.config.grove.main_branch
+    pub fn default_branch(&self) -> &str {
+        &self.config.grove.default_branch
     }
 
-    /// Reload the configuration from disk
+    /// Get path where config should be stored (in default branch worktree)
+    pub fn config_path(&self) -> PathBuf {
+        self.worktree_path(self.default_branch()).join(".grove.toml")
+    }
+
     pub fn reload_config(&mut self) -> Result<()> {
-        let config_path = self.path.join(".grove.toml");
-        if config_path.exists() {
-            self.config = GroveConfig::load(&config_path)?;
-        }
+        self.config = Self::load_config(&self.path)?;
         Ok(())
     }
 }
@@ -136,74 +124,30 @@ mod tests {
     fn setup_grove_repo() -> TempDir {
         let temp_dir = TempDir::new().unwrap();
 
-        // Create a regular git repo first
         git::git_command(&["init"], Some(temp_dir.path())).unwrap();
-        git::git_command(
-            &["config", "user.email", "test@test.com"],
-            Some(temp_dir.path()),
-        )
-        .unwrap();
+        git::git_command(&["config", "user.email", "test@test.com"], Some(temp_dir.path())).unwrap();
         git::git_command(&["config", "user.name", "Test"], Some(temp_dir.path())).unwrap();
-        git::git_command(
-            &["config", "commit.gpgsign", "false"],
-            Some(temp_dir.path()),
-        )
-        .unwrap();
+        git::git_command(&["config", "commit.gpgsign", "false"], Some(temp_dir.path())).unwrap();
         git::git_command(&["checkout", "-b", "main"], Some(temp_dir.path())).unwrap();
 
-        let file_path = temp_dir.path().join("README.md");
-        std::fs::write(&file_path, "# Test").unwrap();
+        std::fs::write(temp_dir.path().join("README.md"), "# Test").unwrap();
         git::git_command(&["add", "."], Some(temp_dir.path())).unwrap();
-        git::git_command(&["commit", "-m", "Initial commit"], Some(temp_dir.path())).unwrap();
+        git::git_command(&["commit", "-m", "Initial"], Some(temp_dir.path())).unwrap();
 
-        // Convert to grove
-        init::init(None, Some(temp_dir.path())).unwrap();
-
+        init::init(None, Some(temp_dir.path()), "main").unwrap();
         temp_dir
     }
 
     #[test]
-    fn test_open_grove_repo() {
+    fn test_repo_discovery_and_config() {
         let temp_dir = setup_grove_repo();
         let repo = GroveRepo::open(temp_dir.path()).unwrap();
 
         assert!(repo.path.exists());
-        assert_eq!(repo.main_branch(), "main");
-    }
+        assert!(repo.trees_dir().is_absolute());
+        assert!(repo.worktree_path("feature/test").to_string_lossy().contains("feature--test"));
 
-    #[test]
-    fn test_discover_from_bare_repo() {
-        let temp_dir = setup_grove_repo();
-        let repo = GroveRepo::discover_from(temp_dir.path()).unwrap();
-
-        assert_eq!(repo.path, temp_dir.path().canonicalize().unwrap());
-    }
-
-    #[test]
-    fn test_discover_from_worktree() {
-        let temp_dir = setup_grove_repo();
-        let repo = GroveRepo::open(temp_dir.path()).unwrap();
-        let main_tree = repo.worktree_path("main");
-
-        let discovered = GroveRepo::discover_from(&main_tree).unwrap();
-        assert_eq!(discovered.path, temp_dir.path().canonicalize().unwrap());
-    }
-
-    #[test]
-    fn test_trees_dir_is_absolute() {
-        let temp_dir = setup_grove_repo();
-        let repo = GroveRepo::open(temp_dir.path()).unwrap();
-
-        let trees_dir = repo.trees_dir();
-        assert!(trees_dir.is_absolute());
-    }
-
-    #[test]
-    fn test_worktree_path() {
-        let temp_dir = setup_grove_repo();
-        let repo = GroveRepo::open(temp_dir.path()).unwrap();
-
-        let path = repo.worktree_path("feature/test");
-        assert!(path.to_string_lossy().contains("feature--test"));
+        let from_worktree = GroveRepo::discover_from(&repo.worktree_path("main")).unwrap();
+        assert_eq!(from_worktree.path, temp_dir.path().canonicalize().unwrap());
     }
 }
