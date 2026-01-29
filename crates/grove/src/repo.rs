@@ -10,41 +10,50 @@ use std::path::{Path, PathBuf};
 pub struct GroveRepo {
     pub path: PathBuf,
     pub config: GroveConfig,
+    pub config_initialized: bool,
 }
 
 impl GroveRepo {
     /// Open a grove repository at the given path
     pub fn open(path: &Path) -> Result<Self> {
+        Self::open_with_worktree(path, None)
+    }
+
+    /// Open a grove repository, optionally checking a specific worktree for config first
+    fn open_with_worktree(path: &Path, current_worktree: Option<&Path>) -> Result<Self> {
         let path = path.canonicalize()?;
 
         if !git::is_bare_repo(&path) {
             anyhow::bail!("Not a bare git repository: {}", path.display());
         }
 
-        let config = Self::load_config(&path)?;
-        Ok(Self { path, config })
+        let (config, initialized) = Self::load_config(&path, current_worktree)?;
+        Ok(Self { path, config, config_initialized: initialized })
     }
 
-    /// Load config: check default branch worktree first, fall back to bare repo
-    fn load_config(bare_repo: &Path) -> Result<GroveConfig> {
-        // Try to find config in default branch worktree
+    /// Load config with discovery order: current worktree → default branch worktree → defaults
+    fn load_config(bare_repo: &Path, current_worktree: Option<&Path>) -> Result<(GroveConfig, bool)> {
+        // 1. Check current worktree first (if provided)
+        if let Some(worktree) = current_worktree {
+            let config_path = worktree.join(".grove.toml");
+            if config_path.exists() {
+                return Ok((GroveConfig::load(&config_path)?, false));
+            }
+        }
+
+        // 2. Check default branch worktree
         if let Ok(default_branch) = git::get_default_branch(bare_repo) {
             let trees_dir = bare_repo.join("trees");
             let worktree_config = trees_dir
                 .join(sanitize_branch_name(&default_branch))
                 .join(".grove.toml");
             if worktree_config.exists() {
-                return GroveConfig::load(&worktree_config);
+                return Ok((GroveConfig::load(&worktree_config)?, false));
             }
         }
 
-        // Fall back to bare repo root (legacy or Forest-managed)
-        let bare_config = bare_repo.join(".grove.toml");
-        if bare_config.exists() {
-            return GroveConfig::load(&bare_config);
-        }
-
-        Ok(GroveConfig::default())
+        // 3. No config found - return defaults and mark as initialized
+        Ok((GroveConfig::default(), true))
     }
 
     /// Find a grove repository from the current directory
@@ -66,7 +75,11 @@ impl GroveRepo {
                 && let Some(bare_repo) = parent.parent()
                 && git::is_bare_repo(bare_repo)
             {
-                return Self::open(bare_repo);
+                // Pass the worktree root for config discovery
+                let worktree_root = git::git_command(&["rev-parse", "--show-toplevel"], Some(&start))
+                    .ok()
+                    .map(|s| PathBuf::from(s.trim()));
+                return Self::open_with_worktree(bare_repo, worktree_root.as_deref());
             }
 
             if git::is_bare_repo(&git_dir) {
@@ -110,7 +123,9 @@ impl GroveRepo {
     }
 
     pub fn reload_config(&mut self) -> Result<()> {
-        self.config = Self::load_config(&self.path)?;
+        let (config, initialized) = Self::load_config(&self.path, None)?;
+        self.config = config;
+        self.config_initialized = initialized;
         Ok(())
     }
 }

@@ -26,8 +26,8 @@ enum Commands {
         #[arg(short, long)]
         branch: Option<String>,
     },
-    /// Create a new worktree from the latest remote main branch
-    Create {
+    /// Add a new worktree from the latest remote default branch
+    Add {
         /// Branch name for the new worktree
         branch: String,
     },
@@ -72,22 +72,25 @@ fn main() -> Result<()> {
             println!("  {} {}", cli::context("Worktree:"), result.default_tree_path.display());
             Ok(())
         }
-        Commands::Create { branch } => {
+        Commands::Add { branch } => {
             let repo = grove::GroveRepo::discover()?;
+            notify_if_default_config(&repo);
             let result = grove::create(&repo, &branch)?;
-            println!("{}", cli::success("Created worktree"));
+            println!("{}", cli::success("Added worktree"));
             println!("  {} {}", cli::context("Branch:"), cli::highlight(&result.branch));
             println!("  {} {}", cli::context("Path:"), result.worktree_path.display());
             Ok(())
         }
         Commands::Delete { branch } => {
             let repo = grove::GroveRepo::discover()?;
+            notify_if_default_config(&repo);
             grove::delete(&repo, &branch)?;
             println!("{}", cli::success(&format!("Deleted worktree: {}", branch)));
             Ok(())
         }
         Commands::List => {
             let repo = grove::GroveRepo::discover()?;
+            notify_if_default_config(&repo);
             let worktrees = grove::list(&repo)?;
 
             if worktrees.is_empty() {
@@ -108,6 +111,7 @@ fn main() -> Result<()> {
         }
         Commands::Merge { source, target, delete } => {
             let repo = grove::GroveRepo::discover()?;
+            notify_if_default_config(&repo);
             let result = grove::merge(&repo, &source, &target)?;
             println!("{}", cli::success(&format!("Merged '{}' into '{}'", result.source, result.target)));
             println!("  {} {}", cli::context("Worktree:"), result.target_worktree.display());
@@ -139,4 +143,10 @@ fn prompt_default_branch() -> Result<String> {
     }
 
     Ok(branch.to_string())
+}
+
+fn notify_if_default_config(repo: &grove::GroveRepo) {
+    if repo.config_initialized {
+        eprintln!("{}", cli::warn("No .grove.toml found, using default configuration"));
+    }
 }
