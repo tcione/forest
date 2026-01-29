@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use super::{Config, GeneralConfig};
-use crate::utils::path::{home_dir};
+use crate::utils::path::home_dir;
 
 fn default_copy() -> Vec<String> {
     vec![".env".to_string(), ".envrc".to_string()]
@@ -50,8 +50,14 @@ mod tests {
         let config = result.unwrap();
 
         let home_dir_string = home_dir().unwrap().to_string_lossy().to_string();
-        assert_eq!(config.general.base_dir, format!("{}/Projects", home_dir_string));
-        assert_eq!(config.general.copy, vec![".env".to_string(), ".envrc".to_string()]);
+        assert_eq!(
+            config.general.base_dir,
+            format!("{}/Projects", home_dir_string)
+        );
+        assert_eq!(
+            config.general.copy,
+            vec![".env".to_string(), ".envrc".to_string()]
+        );
         assert!(config.general.exec.is_empty());
 
         let config_file = temp_dir.join("config.toml");

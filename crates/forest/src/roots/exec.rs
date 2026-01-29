@@ -1,8 +1,8 @@
 use anyhow::Result;
 use std::path::PathBuf;
 
-use crate::utils::exec::call as exec_call;
 use super::fuzzy_selector::call as fuzzy_selector_call;
+use crate::utils::exec::call as exec_call;
 
 pub fn call(roots_dir: &PathBuf, command: String, root: Option<String>) -> Result<()> {
     let root_struct = fuzzy_selector_call(roots_dir, root)?;

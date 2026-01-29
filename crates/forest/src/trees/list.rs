@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use std::path::PathBuf;
 
-use super::{Tree, Trees, RootsTrees};
+use super::{RootsTrees, Tree, Trees};
 use crate::application::Application;
 use crate::roots;
 use crate::utils::git::Git;
@@ -32,7 +32,6 @@ pub fn call(application: &Application, root: &Option<String>) -> Result<RootsTre
 
     Ok(trees)
 }
-
 
 fn root_trees(raw_trees: String, default_branch: &str) -> Result<Trees> {
     if raw_trees.trim().is_empty() {
@@ -115,12 +114,7 @@ mod test {
         std::process::Command::new("git")
             .arg("-C")
             .arg(root_path)
-            .args([
-                "worktree",
-                "add",
-                "-b",
-                branch,
-            ])
+            .args(["worktree", "add", "-b", branch])
             .arg(tree_path)
             .output()
             .unwrap();
@@ -145,13 +139,23 @@ mod test {
 
         assert_eq!(result["repo1"].len(), 1);
         assert_eq!(result["repo1"][0].name, "repo1--feature");
-        assert!(result["repo1"][0].path.to_string_lossy().ends_with("trees/repo1--feature"));
+        assert!(
+            result["repo1"][0]
+                .path
+                .to_string_lossy()
+                .ends_with("trees/repo1--feature")
+        );
         assert_eq!(result["repo1"][0].branch, "feature");
         assert!(!result["repo1"][0].head.is_empty());
 
         assert_eq!(result["repo2"].len(), 1);
         assert_eq!(result["repo2"][0].name, "repo2--fix--a-bug");
-        assert!(result["repo2"][0].path.to_string_lossy().ends_with("trees/repo2--fix--a-bug"));
+        assert!(
+            result["repo2"][0]
+                .path
+                .to_string_lossy()
+                .ends_with("trees/repo2--fix--a-bug")
+        );
         assert_eq!(result["repo2"][0].branch, "fix/a-bug");
         assert!(!result["repo2"][0].head.is_empty());
     }
@@ -238,10 +242,7 @@ mod test {
 
         let tree = &result[0];
         assert_eq!(tree.name, "repo--feature--ui");
-        assert_eq!(
-            tree.path,
-            PathBuf::from("/path/to/trees/repo--feature--ui")
-        );
+        assert_eq!(tree.path, PathBuf::from("/path/to/trees/repo--feature--ui"));
         assert_eq!(tree.branch, "feature/ui");
         assert_eq!(tree.head, "789ghi012jkl");
     }

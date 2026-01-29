@@ -2,7 +2,7 @@ use anyhow::Result;
 use std::fs::read_dir;
 use std::path::Path;
 
-use super::{Roots, Root};
+use super::{Root, Roots};
 
 pub fn call(roots_dir: &Path) -> Result<Roots> {
     let mut roots: Roots = vec![];
@@ -27,9 +27,9 @@ pub fn call(roots_dir: &Path) -> Result<Roots> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use std::fs::create_dir_all;
     use std::path::PathBuf;
+    use tempfile::TempDir;
 
     #[test]
     fn test_list_run_with_empty_directory() {

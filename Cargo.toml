@@ -1,22 +1,18 @@
-[package]
-name = "forest"
-version = "0.11.1"
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
 edition = "2024"
 license = "MIT OR Apache-2.0"
-description = "A CLI tool to make working with easier by establishing a few conventions and abstracting away some git commands."
-homepage = "https://github.com/tcione/forest"
 repository = "https://github.com/tcione/forest"
 
-[dependencies]
+[workspace.dependencies]
 clap = { version = "4.5.46", features = ["derive"] }
 serde = { version = "1.0.219", features = ["derive"] }
-directories = "6"
 toml = "0.9"
 regex = "1"
 anyhow = "1"
 thiserror = "2.0.16"
-console = "0.16.1"
-dialoguer = { version = "0.12.0", features = ["fuzzy-select"] }
-
-[dev-dependencies]
 tempfile = "3.8"
+console = "0.15"

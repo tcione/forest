@@ -15,6 +15,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Forest is a CLI tool that facilitates git worktrees management, following convention over configuration principles. The tool manages repositories in `roots/` directories and worktrees in `trees/` directories with a specific naming pattern: `{repository-name}--{branch-name}`.
 
+### Roadmap
+- [PRD: Grove & Forest Split](docs/PRD-grove-forest-split.md) - Splitting into two binaries: Grove (repo-level) and Forest (global orchestrator)
+
 ## Development Commands
 
 ### Building and Running

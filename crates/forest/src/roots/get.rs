@@ -16,13 +16,12 @@ pub fn call(roots_dir: &Path, root: Option<String>) -> Result<Root> {
                 name: root_name,
                 path: root_dir,
             })
-        },
+        }
         None => {
             let root_struct = fuzzy_selector_call(roots_dir, root)?;
             Ok(root_struct)
         }
     }
-
 }
 
 #[cfg(test)]

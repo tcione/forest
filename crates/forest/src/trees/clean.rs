@@ -30,7 +30,8 @@ pub fn call(application: &Application, root: Option<String>) -> Result<()> {
         .map(|(root, tree)| cli_ui::tree(root, &tree))
         .collect();
 
-    let select_prompt = cli_ui::prompt("\nSelect trees to delete (j/k to navigate, space to toggle");
+    let select_prompt =
+        cli_ui::prompt("\nSelect trees to delete (j/k to navigate, space to toggle");
 
     let selections = MultiSelect::new()
         .with_prompt(select_prompt)
@@ -45,10 +46,7 @@ pub fn call(application: &Application, root: Option<String>) -> Result<()> {
     println!("\n{}", cli_ui::prompt("⚠ Trees selected for deletion:"));
     for &i in &selections {
         let (root, tree) = &all_trees[i];
-        let item = format!(
-            "-> {}",
-            cli_ui::tree(root, &tree),
-        );
+        let item = format!("-> {}", cli_ui::tree(root, &tree),);
         println!("{}", style(item).dim());
     }
 
@@ -64,11 +62,7 @@ pub fn call(application: &Application, root: Option<String>) -> Result<()> {
             let (root, tree) = &all_trees[i];
             let display = cli_ui::tree(root, &tree);
             match delete_call(application, root, &tree.branch) {
-                Ok(()) => println!(
-                    "{} {}",
-                    style("• Deleted: ").green().dim(),
-                    display,
-                ),
+                Ok(()) => println!("{} {}", style("• Deleted: ").green().dim(), display,),
                 Err(e) => eprintln!(
                     "{} {} {}: {}",
                     style("• Failed to delete '").red().dim(),

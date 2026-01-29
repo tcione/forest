@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 
-use crate::trees;
-use crate::roots;
 use crate::config::{Config, load_config};
-use crate::utils::path::config_dir;
+use crate::roots;
+use crate::trees;
 use crate::utils::cli_ui;
+use crate::utils::path::config_dir;
 
 pub struct Application {
     pub roots_dir: PathBuf,
@@ -34,8 +34,8 @@ impl Application {
             Ok(root) => {
                 let msg = format!("{} cloned into {}", root.name, root.path.display());
                 println!("\n{}", cli_ui::success(&msg));
-            },
-            Err(err) => self.expected_error(err)
+            }
+            Err(err) => self.expected_error(err),
         }
     }
 
@@ -50,8 +50,8 @@ impl Application {
                 for root in roots {
                     println!("{}", cli_ui::root_with_path(&root));
                 }
-            },
-            Err(_) => self.expected_error("Roots directory does not exist!")
+            }
+            Err(_) => self.expected_error("Roots directory does not exist!"),
         }
     }
 
@@ -59,8 +59,8 @@ impl Application {
         match roots::get::call(&self.roots_dir, root) {
             Ok(root_struct) => {
                 println!("{}", root_struct.path.display());
-            },
-            Err(err) => self.expected_error(err)
+            }
+            Err(err) => self.expected_error(err),
         }
     }
 
@@ -77,8 +77,8 @@ impl Application {
             Ok(tree) => {
                 eprintln!("{}", cli_ui::context("New worktree created at:"));
                 println!("{}", tree.path.display());
-            },
-            Err(err) => self.expected_error(err)
+            }
+            Err(err) => self.expected_error(err),
         }
     }
 
@@ -94,8 +94,8 @@ impl Application {
                         println!("{}", cli_ui::tree_with_path(&root, &tree));
                     }
                 });
-            },
-            Err(err) => self.expected_error(err)
+            }
+            Err(err) => self.expected_error(err),
         }
     }
 
@@ -107,8 +107,8 @@ impl Application {
         match trees::get::call(&self, &root, &tree) {
             Ok(t) => {
                 println!("{}", t.path.display());
-            },
-            Err(err) => self.expected_error(err)
+            }
+            Err(err) => self.expected_error(err),
         }
     }
 
